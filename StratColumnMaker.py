@@ -54,9 +54,9 @@ class StratColumnMaker(QMainWindow):
         layout.addWidget(QLabel("Add New Layer:"))
         
         # Layer name
-        layout.addWidget(QLabel("Layer Name:"))
+        layout.addWidget(QLabel("Formation Name:"))
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("e.g., Limestone Unit A")
+        self.name_input.setPlaceholderText("e.g., Barren Measures")
         layout.addWidget(self.name_input)
         
         # Rock type
