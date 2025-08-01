@@ -1,10 +1,22 @@
 import json
+import sys
+import pdb
 import StratColumn as sc
+import Layer
 
-from Lithology import RockCategory, RockProperties
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox
+from Lithology import RockCategory, RockProperties, RockType
+from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+                               QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
+                               QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
+                               QDoubleSpinBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
+from functools import partial
+
+DEFAULT_THICKNESS = 1000
+DEFAULT_YOUNG_AGE = 0.0
+DEFAULT_OLD_AGE = 4567.0
+DEFAULT_FORMATION_TOP = 0
 
 def populate_rock_type_combo(combo_box):
     """Populate QComboBox with rock types grouped by category"""
@@ -32,7 +44,7 @@ class StratColumnMaker(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Stratigraphic Column Maker")
-        self.setGeometry(100, 100, 800, 700)
+        self.setGeometry(100, 100, 960, 800)
         
         # Central widget
         central_widget = QWidget()
@@ -44,11 +56,28 @@ class StratColumnMaker(QMainWindow):
         # Control panel
         control_panel = self.create_control_panel()
         layout.addWidget(control_panel, 1)
+
+        # Stratigraphic column
+        self.strat_column = sc.StratColumn()
+        layout.addWidget(self.strat_column, 2)
+
+    def validate_start(self, start_value):
+        end_value = self.old_age_input.value()
+        if start_value >= end_value:
+            self.old_age_input.setValue(round(start_value + 0.1, 2))
+        self.old_age_input.setMinimum(round(start_value + 0.01, 2))
+
+    def validate_end(self, end_value):
+        start_value = self.young_age_input.value()
+        if end_value <= start_value:
+            self.young_age_input.setValue(round(end_value - 0.1, 2))
+        self.young_age_input.setMaximum(round(end_value - 0.01, 2))
     
     def create_control_panel(self):
         """Create the control panel with input fields and buttons"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
+        form_layout = QHBoxLayout()
         
         # Layer input section
         layout.addWidget(QLabel("Add New Layer:"))
@@ -68,9 +97,39 @@ class StratColumnMaker(QMainWindow):
         # Thickness
         layout.addWidget(QLabel("Thickness (m):"))
         self.thickness_input = QSpinBox()
-        self.thickness_input.setRange(1, 1000)
-        self.thickness_input.setValue(10)
+        self.thickness_input.setRange(1, 10000)
+        self.thickness_input.setValue(DEFAULT_THICKNESS)
         layout.addWidget(self.thickness_input)
+
+        # Formation Top
+        layout.addWidget(QLabel("Formation Top (m):"))
+        self.formation_top_input = QSpinBox()
+        self.formation_top_input.setRange(0, 999999)
+        self.formation_top_input.setValue(DEFAULT_FORMATION_TOP)
+        layout.addWidget(self.formation_top_input)
+
+        # Stratigraphic Age
+        form_layout.addWidget(QLabel("Youngest Stratigraphic Age (Ma):"))
+
+        self.young_age_input = QDoubleSpinBox()
+        self.young_age_input.setRange(0.0, 10000.0)
+        self.young_age_input.setSingleStep(0.1)
+        self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
+
+        form_layout.addWidget(self.young_age_input)
+
+        form_layout.addWidget(QLabel("Oldest Stratigraphic Age (Ma):"))
+        self.old_age_input = QDoubleSpinBox()
+        self.old_age_input.setRange(0.0, 10000.0)
+        self.old_age_input.setSingleStep(0.1)
+        self.old_age_input.setValue(DEFAULT_OLD_AGE)
+        
+        form_layout.addWidget(self.old_age_input)
+
+        layout.addLayout(form_layout)
+
+        self.young_age_input.valueChanged.connect(self.validate_start)
+        self.old_age_input.valueChanged.connect(self.validate_end)
         
         # Color selection
         self.color_button = QPushButton("Select Color")
@@ -90,7 +149,7 @@ class StratColumnMaker(QMainWindow):
         layout.addWidget(QLabel("Current Layers:"))
         self.layer_table = QTableWidget()
         self.layer_table.setColumnCount(4)
-        self.layer_table.setHorizontalHeaderLabels(["Name", "Type", "Thickness", "Action"])
+        self.layer_table.setHorizontalHeaderLabels(["Name", "Thickness", "Type", "Action"])
         layout.addWidget(self.layer_table)
         
         # File operations
@@ -123,13 +182,48 @@ class StratColumnMaker(QMainWindow):
             self.update_color_button()
     
     def add_layer(self):
-        pass
+        name = self.name_input.text().strip()
+        if not name:
+            QMessageBox.warning(self, "Warning", "Please enter a layer name")
+            return
+        
+        selected_rock = self.rock_type_combo.currentData()
+        if isinstance(selected_rock, RockType):
+            pattern = RockProperties.get_pattern(selected_rock)
+        
+        thickness = self.thickness_input.value()
+        formation_top = self.formation_top_input.value()
+        young_age = self.young_age_input.value()
+        old_age = self.old_age_input.value()
+
+        layer = Layer.Layer(name, thickness, selected_rock)
+        
+        self.strat_column.add_layer(layer)
+        self.update_layer_table()
+
+        self.name_input.clear()
+        self.thickness_input.setValue(DEFAULT_THICKNESS)
+        self.formation_top_input.setValue(DEFAULT_FORMATION_TOP)
+        self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
+        self.old_age_input.setValue(DEFAULT_OLD_AGE)
 
     def update_layer_table(self):
-        pass
+        self.layer_table.setRowCount(len(self.strat_column.layers))
+        
+        for i, layer in enumerate(self.strat_column.layers):
+            self.layer_table.setItem(i, 0, QTableWidgetItem(layer.name))
+            self.layer_table.setItem(i, 1, QTableWidgetItem(f"{layer.thickness}m"))
+            self.layer_table.setItem(i, 2, QTableWidgetItem(layer.rock_type_display_name))
+            
+            # Remove button
+            remove_btn = QPushButton("Remove")
+            remove_btn.clicked.connect(partial(self.remove_layer, i))
+            self.layer_table.setCellWidget(i, 3, remove_btn)
     
     def remove_layer(self, index):
-        pass
+        """Remove a layer from the column"""
+        self.strat_column.remove_layer(index)
+        self.update_layer_table()
     
     def add_example_layers(self):
         pass
