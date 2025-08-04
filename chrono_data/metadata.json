@@ -1,0 +1,18 @@
+{
+  "source": "ICS International Chronostratigraphic Chart 2024/12",
+  "version": "2024.12",
+  "url": "https://stratigraphy.org/",
+  "last_updated": "2024-12-01",
+  "notes": [
+    "Ages in millions of years ago (Ma)",
+    "GSSP-defined boundaries where available",
+    "Approximate ages (~) for some Precambrian units",
+    "Data can be updated by modifying JSON files"
+  ],
+  "coverage": {
+    "eras": "Complete from Hadean to present",
+    "periods": "All Phanerozoic + major Proterozoic",
+    "epochs": "Comprehensive Cenozoic + basic Mesozoic",
+    "ages": "Key stages, extensible"
+  }
+}

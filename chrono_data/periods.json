@@ -1,0 +1,134 @@
+[
+  {
+    "name": "Quaternary",
+    "start_age": 0,
+    "end_age": 2.58,
+    "parent": "Cenozoic"
+  },
+  {
+    "name": "Neogene",
+    "start_age": 2.58,
+    "end_age": 23.04,
+    "parent": "Cenozoic"
+  },
+  {
+    "name": "Paleogene",
+    "start_age": 23.04,
+    "end_age": 66.0,
+    "parent": "Cenozoic"
+  },
+  {
+    "name": "Cretaceous",
+    "start_age": 66.0,
+    "end_age": 143.1,
+    "parent": "Mesozoic"
+  },
+  {
+    "name": "Jurassic",
+    "start_age": 143.1,
+    "end_age": 201.4,
+    "parent": "Mesozoic"
+  },
+  {
+    "name": "Triassic",
+    "start_age": 201.4,
+    "end_age": 251.902,
+    "parent": "Mesozoic"
+  },
+  {
+    "name": "Permian",
+    "start_age": 251.902,
+    "end_age": 298.9,
+    "parent": "Paleozoic"
+  },
+  {
+    "name": "Carboniferous",
+    "start_age": 298.9,
+    "end_age": 358.86,
+    "parent": "Paleozoic"
+  },
+  {
+    "name": "Devonian",
+    "start_age": 358.86,
+    "end_age": 419.62,
+    "parent": "Paleozoic"
+  },
+  {
+    "name": "Silurian",
+    "start_age": 419.62,
+    "end_age": 443.1,
+    "parent": "Paleozoic"
+  },
+  {
+    "name": "Ordovician",
+    "start_age": 443.1,
+    "end_age": 486.85,
+    "parent": "Paleozoic"
+  },
+  {
+    "name": "Cambrian",
+    "start_age": 486.85,
+    "end_age": 538.8,
+    "parent": "Paleozoic"
+  },
+  {
+    "name": "Ediacaran",
+    "start_age": 538.8,
+    "end_age": 635.0,
+    "parent": "Neoproterozoic"
+  },
+  {
+    "name": "Cryogenian",
+    "start_age": 635.0,
+    "end_age": 720.0,
+    "parent": "Neoproterozoic"
+  },
+  {
+    "name": "Tonian",
+    "start_age": 720.0,
+    "end_age": 1000.0,
+    "parent": "Neoproterozoic"
+  },
+  {
+    "name": "Stenian",
+    "start_age": 1000.0,
+    "end_age": 1200.0,
+    "parent": "Mesoproterozoic"
+  },
+  {
+    "name": "Ectasian",
+    "start_age": 1200.0,
+    "end_age": 1400.0,
+    "parent": "Mesoproterozoic"
+  },
+  {
+    "name": "Calymmian",
+    "start_age": 1400.0,
+    "end_age": 1600.0,
+    "parent": "Mesoproterozoic"
+  },
+  {
+    "name": "Statherian",
+    "start_age": 1600.0,
+    "end_age": 1800.0,
+    "parent": "Paleoproterozoic"
+  },
+  {
+    "name": "Orosirian",
+    "start_age": 1800.0,
+    "end_age": 2050.0,
+    "parent": "Paleoproterozoic"
+  },
+  {
+    "name": "Rhyacian",
+    "start_age": 2050.0,
+    "end_age": 2300.0,
+    "parent": "Paleoproterozoic"
+  },
+  {
+    "name": "Siderian",
+    "start_age": 2300.0,
+    "end_age": 2500.0,
+    "parent": "Paleoproterozoic"
+  }
+]

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Cenozoic",
+    "start_age": 0,
+    "end_age": 66.0,
+    "parent": "Phanerozoic"
+  },
+  {
+    "name": "Mesozoic",
+    "start_age": 66.0,
+    "end_age": 251.902,
+    "parent": "Phanerozoic"
+  },
+  {
+    "name": "Paleozoic",
+    "start_age": 251.902,
+    "end_age": 538.8,
+    "parent": "Phanerozoic"
+  },
+  {
+    "name": "Neoproterozoic",
+    "start_age": 538.8,
+    "end_age": 1000.0,
+    "parent": "Proterozoic"
+  },
+  {
+    "name": "Mesoproterozoic",
+    "start_age": 1000.0,
+    "end_age": 1600.0,
+    "parent": "Proterozoic"
+  },
+  {
+    "name": "Paleoproterozoic",
+    "start_age": 1600.0,
+    "end_age": 2500.0,
+    "parent": "Proterozoic"
+  },
+  {
+    "name": "Neoarchean",
+    "start_age": 2500.0,
+    "end_age": 2800.0,
+    "parent": "Archean"
+  },
+  {
+    "name": "Mesoarchean",
+    "start_age": 2800.0,
+    "end_age": 3200.0,
+    "parent": "Archean"
+  },
+  {
+    "name": "Paleoarchean",
+    "start_age": 3200.0,
+    "end_age": 3600.0,
+    "parent": "Archean"
+  },
+  {
+    "name": "Eoarchean",
+    "start_age": 3600.0,
+    "end_age": 4031.0,
+    "parent": "Archean"
+  },
+  {
+    "name": "Hadean",
+    "start_age": 4031.0,
+    "end_age": 4567.0,
+    "parent": "Precambrian"
+  }
+]

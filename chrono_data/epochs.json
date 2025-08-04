@@ -1,0 +1,206 @@
+[
+  {
+    "name": "Holocene",
+    "start_age": 0,
+    "end_age": 0.0117,
+    "parent": "Quaternary"
+  },
+  {
+    "name": "Pleistocene",
+    "start_age": 0.0117,
+    "end_age": 2.58,
+    "parent": "Quaternary"
+  },
+  {
+    "name": "Pliocene",
+    "start_age": 2.58,
+    "end_age": 5.333,
+    "parent": "Neogene"
+  },
+  {
+    "name": "Miocene",
+    "start_age": 5.333,
+    "end_age": 23.04,
+    "parent": "Neogene"
+  },
+  {
+    "name": "Oligocene",
+    "start_age": 23.04,
+    "end_age": 33.9,
+    "parent": "Paleogene"
+  },
+  {
+    "name": "Eocene",
+    "start_age": 33.9,
+    "end_age": 56.0,
+    "parent": "Paleogene"
+  },
+  {
+    "name": "Paleocene",
+    "start_age": 56.0,
+    "end_age": 66.0,
+    "parent": "Paleogene"
+  },
+  {
+    "name": "Upper Cretaceous",
+    "start_age": 66.0,
+    "end_age": 100.5,
+    "parent": "Cretaceous"
+  },
+  {
+    "name": "Lower Cretaceous",
+    "start_age": 100.5,
+    "end_age": 143.1,
+    "parent": "Cretaceous"
+  },
+  {
+    "name": "Upper Jurassic",
+    "start_age": 143.1,
+    "end_age": 161.5,
+    "parent": "Jurassic"
+  },
+  {
+    "name": "Middle Jurassic",
+    "start_age": 161.5,
+    "end_age": 174.7,
+    "parent": "Jurassic"
+  },
+  {
+    "name": "Lower Jurassic",
+    "start_age": 174.7,
+    "end_age": 201.4,
+    "parent": "Jurassic"
+  },
+  {
+    "name": "Upper Triassic",
+    "start_age": 201.4,
+    "end_age": 237.0,
+    "parent": "Triassic"
+  },
+  {
+    "name": "Middle Triassic",
+    "start_age": 237.0,
+    "end_age": 246.7,
+    "parent": "Triassic"
+  },
+  {
+    "name": "Lower Triassic",
+    "start_age": 246.7,
+    "end_age": 251.902,
+    "parent": "Triassic"
+  },
+  {
+    "name": "Lopingian",
+    "start_age": 251.902,
+    "end_age": 259.51,
+    "parent": "Permian"
+  },
+  {
+    "name": "Guadalupian",
+    "start_age": 259.51,
+    "end_age": 274.4,
+    "parent": "Permian"
+  },
+  {
+    "name": "Cisuralian",
+    "start_age": 274.4,
+    "end_age": 298.9,
+    "parent": "Permian"
+  },
+  {
+    "name": "Pennsylvanian",
+    "start_age": 298.9,
+    "end_age": 323.4,
+    "parent": "Carboniferous"
+  },
+  {
+    "name": "Mississippian",
+    "start_age": 323.4,
+    "end_age": 358.86,
+    "parent": "Carboniferous"
+  },
+  {
+    "name": "Upper Devonian",
+    "start_age": 358.86,
+    "end_age": 382.31,
+    "parent": "Devonian"
+  },
+  {
+    "name": "Middle Devonian",
+    "start_age": 382.31,
+    "end_age": 393.47,
+    "parent": "Devonian"
+  },
+  {
+    "name": "Lower Devonian",
+    "start_age": 393.47,
+    "end_age": 419.62,
+    "parent": "Devonian"
+  },
+  {
+    "name": "Pridoli",
+    "start_age": 419.62,
+    "end_age": 422.7,
+    "parent": "Silurian"
+  },
+  {
+    "name": "Ludlow",
+    "start_age": 422.7,
+    "end_age": 426.7,
+    "parent": "Silurian"
+  },
+  {
+    "name": "Wenlock",
+    "start_age": 426.7,
+    "end_age": 432.9,
+    "parent": "Silurian"
+  },
+  {
+    "name": "Llandovery",
+    "start_age": 432.9,
+    "end_age": 443.1,
+    "parent": "Silurian"
+  },
+  {
+    "name": "Upper Ordovician",
+    "start_age": 443.1,
+    "end_age": 458.2,
+    "parent": "Ordovician"
+  },
+  {
+    "name": "Middle Ordovician",
+    "start_age": 458.2,
+    "end_age": 471.3,
+    "parent": "Ordovician"
+  },
+  {
+    "name": "Lower Ordovician",
+    "start_age": 471.3,
+    "end_age": 486.85,
+    "parent": "Ordovician"
+  },
+  {
+    "name": "Furongian",
+    "start_age": 486.85,
+    "end_age": 497.0,
+    "parent": "Cambrian"
+  },
+  {
+    "name": "Miaolingian",
+    "start_age": 497.0,
+    "end_age": 506.5,
+    "parent": "Cambrian"
+  },
+  {
+    "name": "Series 2",
+    "start_age": 506.5,
+    "end_age": 521.0,
+    "parent": "Cambrian"
+  },
+  {
+    "name": "Terreneuvian",
+    "start_age": 521.0,
+    "end_age": 538.8,
+    "parent": "Cambrian"
+  }
+]
