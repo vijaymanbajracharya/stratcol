@@ -1,10 +1,13 @@
 import Layer
 import pdb
+import os
+import re
 
 from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QPainter, QColor, QPen, QFont, QBrush, QPixmap
 from PySide6.QtCore import Qt, QRectF
 from ChronostratigraphicMapper import ChronostratigraphicMapper as chronomap
+from Lithology import RockCategory, RockProperties, RockType
 
 class StratColumn(QWidget):
     def __init__(self):
@@ -12,8 +15,8 @@ class StratColumn(QWidget):
         self.layers = []  # List of layer dictionaries
         self.setMinimumSize(500, 600)  # Increased width for era column
         self.chronomap = chronomap()
-        self.texture_brush = None
-        self.load_texture("assets\\texture_601.png", scale_factor=0.15, crop_pixels=16)
+        self.texture_brushes = None
+        self.load_texture(scale_factor=0.10, crop_pixels=16)
     
 
     def add_layer(self, layer: Layer):
@@ -25,30 +28,56 @@ class StratColumn(QWidget):
         if 0 <= index < len(self.layers):
             del self.layers[index]
             self.update()
-            
-    def load_texture(self, texture_path, scale_factor=1.0, crop_pixels=5):
+    
+    def get_texture_brush(self, texture_id):
+        """Get a specific texture brush by ID"""
+        return self.texture_brushes.get(texture_id, None)
+
+    def load_texture(self, scale_factor=1.0, crop_pixels=5):
         """Load and cache the texture brush with scaling and cropping"""
-        texture_pixmap = QPixmap(texture_path)
-        if not texture_pixmap.isNull():
-            # Crop pixels from each border
-            cropped_pixmap = texture_pixmap.copy(
-                crop_pixels,  # x offset
-                crop_pixels,  # y offset
-                texture_pixmap.width() - (crop_pixels * 2),   # new width
-                texture_pixmap.height() - (crop_pixels * 2)   # new height
-            )
-            
-            if scale_factor != 1.0:
-                # Scale the cropped texture
-                scaled_pixmap = cropped_pixmap.scaled(
-                    int(cropped_pixmap.width() * scale_factor),
-                    int(cropped_pixmap.height() * scale_factor),
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
-                self.texture_brush = QBrush(scaled_pixmap)
-            else:
-                self.texture_brush = QBrush(cropped_pixmap)
+        self.texture_brushes = {}  # Dictionary to store all textures
+        patterns_dir = "assets/patterns"
+        
+        # Check if directory exists
+        if not os.path.exists(patterns_dir):
+            print(f"Directory {patterns_dir} not found")
+            return
+
+        # Get all PNG files in the directory
+        for filename in os.listdir(patterns_dir):
+            if filename.lower().endswith('.png') and 'texture_' in filename:
+                # Extract number from filename using regex
+                match = re.search(r'texture_(\d+)\.png', filename)
+                if match:
+                    texture_number = match.group(1)
+                    texture_path = os.path.join(patterns_dir, filename)
+                    
+                    # Load the texture
+                    texture_pixmap = QPixmap(texture_path)
+                    if not texture_pixmap.isNull():
+                        # Crop pixels from each border
+                        cropped_pixmap = texture_pixmap.copy(
+                            crop_pixels,  # x offset
+                            crop_pixels,  # y offset
+                            texture_pixmap.width() - (crop_pixels * 2),   # new width
+                            texture_pixmap.height() - (crop_pixels * 2)   # new height
+                        )
+                        
+                        if scale_factor != 1.0:
+                            # Scale the cropped texture
+                            scaled_pixmap = cropped_pixmap.scaled(
+                                int(cropped_pixmap.width() * scale_factor),
+                                int(cropped_pixmap.height() * scale_factor),
+                                Qt.KeepAspectRatio,
+                                Qt.SmoothTransformation
+                            )
+                            self.texture_brushes[texture_number] = QBrush(scaled_pixmap)
+                        else:
+                            self.texture_brushes[texture_number] = QBrush(cropped_pixmap)
+                        
+                        print(f"Loaded texture_{texture_number}.png")
+                    else:
+                        print(f"Failed to load {filename}")
 
     def paintEvent(self, event):
         """Draw the stratigraphic column with era display"""
@@ -125,7 +154,7 @@ class StratColumn(QWidget):
                 
                 # Draw pattern column for this layer
                 self.draw_pattern_column(painter, layer, 
-                                   pattern_col_x, current_y, pattern_col_width, layer_height)
+                                   pattern_col_x, current_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
             
                 current_y += layer_height
             
@@ -153,12 +182,15 @@ class StratColumn(QWidget):
         finally:
             painter.end()
     
-    def draw_pattern_column(self, painter, layer, x, y, width, height):
+    def draw_pattern_column(self, painter, layer, x, y, width, height, texture_id=0):
         """Draw the pattern column for a single layer"""
         painter.setPen(QPen(Qt.black, 1))
+
+        # Get the specific texture brush
+        texture_brush = self.get_texture_brush(texture_id)
         
-        if self.texture_brush:
-            painter.setBrush(self.texture_brush)
+        if texture_brush:
+            painter.setBrush(texture_brush)
         else:
             painter.setBrush(QBrush(Qt.NoBrush))
         
