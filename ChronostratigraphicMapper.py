@@ -71,7 +71,7 @@ class ChronostratigraphicMapper:
                 unit_end = unit['end_age']
                 # Check if the age range overlaps with this unit
                 if min_age_ma < unit_end and max_age_ma > unit_start:
-                    overlapping.append(unit['name'])
+                    overlapping.append(unit)
             return overlapping
         
         # Find overlapping units for each hierarchical level

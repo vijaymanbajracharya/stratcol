@@ -3,204 +3,238 @@
     "name": "Holocene",
     "start_age": 0,
     "end_age": 0.0117,
-    "parent": "Quaternary"
+    "parent": "Quaternary",
+    "color": "#FEEBD2"
   },
   {
     "name": "Pleistocene",
     "start_age": 0.0117,
     "end_age": 2.58,
-    "parent": "Quaternary"
+    "parent": "Quaternary",
+    "color": "#FFEFAF"
   },
   {
     "name": "Pliocene",
     "start_age": 2.58,
     "end_age": 5.333,
-    "parent": "Neogene"
+    "parent": "Neogene",
+    "color": "#FFFF99"
   },
   {
     "name": "Miocene",
     "start_age": 5.333,
     "end_age": 23.04,
-    "parent": "Neogene"
+    "parent": "Neogene",
+    "color": "#FFFF00"
   },
   {
     "name": "Oligocene",
     "start_age": 23.04,
     "end_age": 33.9,
-    "parent": "Paleogene"
+    "parent": "Paleogene",
+    "color": "#FDC07A"
   },
   {
     "name": "Eocene",
     "start_age": 33.9,
     "end_age": 56.0,
-    "parent": "Paleogene"
+    "parent": "Paleogene",
+    "color": "#FDB46C"
   },
   {
     "name": "Paleocene",
     "start_age": 56.0,
     "end_age": 66.0,
-    "parent": "Paleogene"
+    "parent": "Paleogene",
+    "color": "#FDA75F"
   },
   {
     "name": "Upper Cretaceous",
     "start_age": 66.0,
     "end_age": 100.5,
-    "parent": "Cretaceous"
+    "parent": "Cretaceous",
+    "color": "#A6D84A"
   },
   {
     "name": "Lower Cretaceous",
     "start_age": 100.5,
     "end_age": 143.1,
-    "parent": "Cretaceous"
+    "parent": "Cretaceous",
+    "color": "#8CCD57"
   },
   {
     "name": "Upper Jurassic",
     "start_age": 143.1,
     "end_age": 161.5,
-    "parent": "Jurassic"
+    "parent": "Jurassic",
+    "color": "#B3E3EE"
   },
   {
     "name": "Middle Jurassic",
     "start_age": 161.5,
     "end_age": 174.7,
-    "parent": "Jurassic"
+    "parent": "Jurassic",
+    "color": "#80CFD8"
   },
   {
     "name": "Lower Jurassic",
     "start_age": 174.7,
     "end_age": 201.4,
-    "parent": "Jurassic"
+    "parent": "Jurassic",
+    "color": "#42AED0"
   },
   {
     "name": "Upper Triassic",
     "start_age": 201.4,
     "end_age": 237.0,
-    "parent": "Triassic"
+    "parent": "Triassic",
+    "color": "#BD8CC3"
   },
   {
     "name": "Middle Triassic",
     "start_age": 237.0,
     "end_age": 246.7,
-    "parent": "Triassic"
+    "parent": "Triassic",
+    "color": "#B168B1"
   },
   {
     "name": "Lower Triassic",
     "start_age": 246.7,
     "end_age": 251.902,
-    "parent": "Triassic"
+    "parent": "Triassic",
+    "color": "#983999"
   },
   {
     "name": "Lopingian",
     "start_age": 251.902,
     "end_age": 259.51,
-    "parent": "Permian"
+    "parent": "Permian",
+    "color": "#FBA794"
   },
   {
     "name": "Guadalupian",
     "start_age": 259.51,
     "end_age": 274.4,
-    "parent": "Permian"
+    "parent": "Permian",
+    "color": "#FB745C"
   },
   {
     "name": "Cisuralian",
     "start_age": 274.4,
     "end_age": 298.9,
-    "parent": "Permian"
+    "parent": "Permian",
+    "color": "#EF5845"
   },
   {
     "name": "Pennsylvanian",
     "start_age": 298.9,
     "end_age": 323.4,
-    "parent": "Carboniferous"
+    "parent": "Carboniferous",
+    "color": "#99C2B5"
   },
   {
     "name": "Mississippian",
     "start_age": 323.4,
     "end_age": 358.86,
-    "parent": "Carboniferous"
+    "parent": "Carboniferous",
+    "color": "#678F66"
   },
   {
     "name": "Upper Devonian",
     "start_age": 358.86,
     "end_age": 382.31,
-    "parent": "Devonian"
+    "parent": "Devonian",
+    "color": "#F1E19D"
   },
   {
     "name": "Middle Devonian",
     "start_age": 382.31,
     "end_age": 393.47,
-    "parent": "Devonian"
+    "parent": "Devonian",
+    "color": "#F1C868"
   },
   {
     "name": "Lower Devonian",
     "start_age": 393.47,
     "end_age": 419.62,
-    "parent": "Devonian"
+    "parent": "Devonian",
+    "color": "#E5AC4D"
   },
   {
     "name": "Pridoli",
     "start_age": 419.62,
     "end_age": 422.7,
-    "parent": "Silurian"
+    "parent": "Silurian",
+    "color": "#E6F5E1"
   },
   {
     "name": "Ludlow",
     "start_age": 422.7,
     "end_age": 426.7,
-    "parent": "Silurian"
+    "parent": "Silurian",
+    "color": "#BFE6CF"
   },
   {
     "name": "Wenlock",
     "start_age": 426.7,
     "end_age": 432.9,
-    "parent": "Silurian"
+    "parent": "Silurian",
+    "color": "#B3E1C2"
   },
   {
     "name": "Llandovery",
     "start_age": 432.9,
     "end_age": 443.1,
-    "parent": "Silurian"
+    "parent": "Silurian",
+    "color": "#99D7B3"
   },
   {
     "name": "Upper Ordovician",
     "start_age": 443.1,
     "end_age": 458.2,
-    "parent": "Ordovician"
+    "parent": "Ordovician",
+    "color": "#7FCA93"
   },
   {
     "name": "Middle Ordovician",
     "start_age": 458.2,
     "end_age": 471.3,
-    "parent": "Ordovician"
+    "parent": "Ordovician",
+    "color": "#4DB47E"
   },
   {
     "name": "Lower Ordovician",
     "start_age": 471.3,
     "end_age": 486.85,
-    "parent": "Ordovician"
+    "parent": "Ordovician",
+    "color": "#1A9D6F"
   },
   {
     "name": "Furongian",
     "start_age": 486.85,
     "end_age": 497.0,
-    "parent": "Cambrian"
+    "parent": "Cambrian",
+    "color": "#B3E095"
   },
   {
     "name": "Miaolingian",
     "start_age": 497.0,
     "end_age": 506.5,
-    "parent": "Cambrian"
+    "parent": "Cambrian",
+    "color": "#A6CF86"
   },
   {
     "name": "Series 2",
     "start_age": 506.5,
     "end_age": 521.0,
-    "parent": "Cambrian"
+    "parent": "Cambrian",
+    "color": "#99C078"
   },
   {
     "name": "Terreneuvian",
     "start_age": 521.0,
     "end_age": 538.8,
-    "parent": "Cambrian"
+    "parent": "Cambrian",
+    "color": "#8CB06C"
   }
 ]

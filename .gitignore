@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 venv
+USGS_pattern_pages
+USGS_Swatches

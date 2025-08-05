@@ -1,10 +1,15 @@
 from Lithology import RockType, RockCategory, RockProperties
+from typing import Optional
 
 class Layer:
-    def __init__(self, name: str, thickness: float, rock_type: RockType):
+    def __init__(self, name: str, thickness: float, rock_type: RockType, formation_top: Optional[int] = None, 
+                 young_age: Optional[float] = None, old_age: Optional[float] = None):
         self.name = name
         self.thickness = thickness
         self.rock_type = rock_type
+        self.formation_top = formation_top
+        self.young_age = young_age
+        self.old_age = old_age
     
     @property
     def category(self) -> RockCategory:
@@ -27,6 +32,9 @@ class Layer:
             'name': self.name,
             'thickness': self.thickness,
             'rock_type': self.rock_type.value,
+            'formation_top': self.formation_top,
+            'young_age': self.young_age,
+            'old_age': self.old_age
         }
     
     @classmethod
@@ -38,4 +46,7 @@ class Layer:
             name=data['name'],
             thickness=data['thickness'],
             rock_type=rock_type,
+            formation_top=data['formation_top'],
+            young_age=data['young_age'],
+            old_age=data['old_age']
         )

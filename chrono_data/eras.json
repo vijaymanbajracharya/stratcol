@@ -3,66 +3,77 @@
     "name": "Cenozoic",
     "start_age": 0,
     "end_age": 66.0,
-    "parent": "Phanerozoic"
+    "parent": "Phanerozoic",
+    "color": "#F2F91D"
   },
   {
     "name": "Mesozoic",
     "start_age": 66.0,
     "end_age": 251.902,
-    "parent": "Phanerozoic"
+    "parent": "Phanerozoic",
+    "color": "#67C5CA"
   },
   {
     "name": "Paleozoic",
     "start_age": 251.902,
     "end_age": 538.8,
-    "parent": "Phanerozoic"
+    "parent": "Phanerozoic",
+    "color": "#99C08D"
   },
   {
     "name": "Neoproterozoic",
     "start_age": 538.8,
     "end_age": 1000.0,
-    "parent": "Proterozoic"
+    "parent": "Proterozoic",
+    "color": "#FEB342"
   },
   {
     "name": "Mesoproterozoic",
     "start_age": 1000.0,
     "end_age": 1600.0,
-    "parent": "Proterozoic"
+    "parent": "Proterozoic",
+    "color": "#FDB462"
   },
   {
     "name": "Paleoproterozoic",
     "start_age": 1600.0,
     "end_age": 2500.0,
-    "parent": "Proterozoic"
+    "parent": "Proterozoic",
+    "color": "#F74370"
   },
   {
     "name": "Neoarchean",
     "start_age": 2500.0,
     "end_age": 2800.0,
-    "parent": "Archean"
+    "parent": "Archean",
+    "color": "#F99BC1"
   },
   {
     "name": "Mesoarchean",
     "start_age": 2800.0,
     "end_age": 3200.0,
-    "parent": "Archean"
+    "parent": "Archean",
+    "color": "#F768A9"
   },
   {
     "name": "Paleoarchean",
     "start_age": 3200.0,
     "end_age": 3600.0,
-    "parent": "Archean"
+    "parent": "Archean",
+    "color": "#F4449F"
   },
   {
     "name": "Eoarchean",
     "start_age": 3600.0,
     "end_age": 4031.0,
-    "parent": "Archean"
+    "parent": "Archean",
+    "color": "#DA037F"
   },
   {
     "name": "Hadean",
     "start_age": 4031.0,
     "end_age": 4567.0,
-    "parent": "Precambrian"
+    "parent": "Precambrian",
+    "color": "#AE027E"
   }
 ]

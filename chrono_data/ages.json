@@ -11,699 +11,699 @@
     "start_age": 0.0042,
     "end_age": 0.0082,
     "parent": "Holocene",
-    "color": "FDECE4"
+    "color": "#FDECE4"
   },
   {
     "name": "Greenlandian",
     "start_age": 0.0082,
     "end_age": 0.0117,
     "parent": "Holocene",
-    "color": "FEECDD"
+    "color": "#FEECDD"
   },
   {
     "name": "Chibanian",
     "start_age": 0.129,
     "end_age": 0.774,
     "parent": "Pleistocene",
-    "color": "FFF2C7"
+    "color": "#FFF2C7"
   },
   {
     "name": "Calabrian",
     "start_age": 0.774,
     "end_age": 1.80,
     "parent": "Pleistocene",
-    "color": "FFF2BA"
+    "color": "#FFF2BA"
   },
   {
     "name": "Gelasian",
     "start_age": 1.80,
     "end_age": 2.58,
     "parent": "Pleistocene",
-    "color": "FFEDB3"
+    "color": "#FFEDB3"
   },
   {
     "name": "Piacenzian",
     "start_age": 2.58,
     "end_age": 3.6,
     "parent": "Pliocene",
-    "color": "FFFFBF"
+    "color": "#FFFFBF"
   },
   {
     "name": "Zanclean",
     "start_age": 3.6,
     "end_age": 5.333,
     "parent": "Pliocene",
-    "color": "FFFFB3"
+    "color": "#FFFFB3"
   },
   {
     "name": "Messinian",
     "start_age": 5.333,
     "end_age": 7.246,
     "parent": "Miocene",
-    "color": "FFFF73"
+    "color": "#FFFF73"
   },
   {
     "name": "Tortonian",
     "start_age": 7.246,
     "end_age": 11.63,
     "parent": "Miocene",
-    "color": "FFFF66"
+    "color": "#FFFF66"
   },
   {
     "name": "Serravallian",
     "start_age": 11.63,
     "end_age": 13.82,
     "parent": "Miocene",
-    "color": "FFFF59"
+    "color": "#FFFF59"
   },
   {
     "name": "Langhian",
     "start_age": 13.82,
     "end_age": 15.98,
     "parent": "Miocene",
-    "color": "FFFF4D"
+    "color": "#FFFF4D"
   },
   {
     "name": "Burdigalian",
     "start_age": 15.98,
     "end_age": 20.45,
     "parent": "Miocene",
-    "color": "FFFF41"
+    "color": "#FFFF41"
   },
   {
     "name": "Aquitanian",
     "start_age": 20.45,
     "end_age": 23.04,
     "parent": "Miocene",
-    "color": "FFFF33"
+    "color": "#FFFF33"
   },
   {
     "name": "Chattian",
     "start_age": 23.04,
     "end_age": 27.3,
     "parent": "Oligocene",
-    "color": "FEE6AA"
+    "color": "#FEE6AA"
   },
   {
     "name": "Rupelian",
     "start_age": 27.3,
     "end_age": 33.9,
     "parent": "Oligocene",
-    "color": "FED99A"
+    "color": "#FED99A"
   },
   {
     "name": "Priabonian",
     "start_age": 33.9,
     "end_age": 37.71,
     "parent": "Eocene",
-    "color": "FDCDA1"
+    "color": "#FDCDA1"
   },
   {
     "name": "Bartonian",
     "start_age": 37.71,
     "end_age": 41.03,
     "parent": "Eocene",
-    "color": "FDC091"
+    "color": "#FDC091"
   },
   {
     "name": "Lutetian",
     "start_age": 41.03,
     "end_age": 48.07,
     "parent": "Eocene",
-    "color": "FCB482"
+    "color": "#FCB482"
   },
   {
     "name": "Ypresian",
     "start_age": 48.07,
     "end_age": 56.0,
     "parent": "Eocene",
-    "color": "FCA773"
+    "color": "#FCA773"
   },
   {
     "name": "Thanetian",
     "start_age": 56.0,
     "end_age": 59.24,
     "parent": "Paleocene",
-    "color": "FDBF6F"
+    "color": "#FDBF6F"
   },
   {
     "name": "Selandian",
     "start_age": 59.24,
     "end_age": 61.66,
     "parent": "Paleocene",
-    "color": "FEBF65"
+    "color": "#FEBF65"
   },
   {
     "name": "Danian",
     "start_age": 61.66,
     "end_age": 66.0,
     "parent": "Paleocene",
-    "color": "FDB462"
+    "color": "#FDB462"
   },
   {
     "name": "Maastrichtian",
     "start_age": 66.0,
     "end_age": 72.2,
     "parent": "Upper Cretaceous",
-    "color": "F2FA8C"
+    "color": "#F2FA8C"
   },
   {
     "name": "Campanian",
     "start_age": 72.2,
     "end_age": 83.6,
     "parent": "Upper Cretaceous",
-    "color": "E6F47F"
+    "color": "#E6F47F"
   },
   {
     "name": "Santonian",
     "start_age": 83.6,
     "end_age": 85.7,
     "parent": "Upper Cretaceous",
-    "color": "D9EF74"
+    "color": "#D9EF74"
   },
   {
     "name": "Coniacian",
     "start_age": 85.7,
     "end_age": 89.8,
     "parent": "Upper Cretaceous",
-    "color": "CCE968"
+    "color": "#CCE968"
   },
   {
     "name": "Turonian",
     "start_age": 89.8,
     "end_age": 93.9,
     "parent": "Upper Cretaceous",
-    "color": "BFE35D"
+    "color": "#BFE35D"
   },
   {
     "name": "Cenomanian",
     "start_age": 93.9,
     "end_age": 100.5,
     "parent": "Upper Cretaceous",
-    "color": "B3DE53"
+    "color": "#B3DE53"
   },
   {
     "name": "Albian",
     "start_age": 100.5,
     "end_age": 113.2,
     "parent": "Lower Cretaceous",
-    "color": "CCEA97"
+    "color": "#CCEA97"
   },
   {
     "name": "Aptian",
     "start_age": 113.2,
     "end_age": 121.4,
     "parent": "Lower Cretaceous",
-    "color": "BFE48A"
+    "color": "#BFE48A"
   },
   {
     "name": "Barremian",
     "start_age": 121.4,
     "end_age": 125.77,
     "parent": "Lower Cretaceous",
-    "color": "B3DF7F"
+    "color": "#B3DF7F"
   },
   {
     "name": "Hauterivian",
     "start_age": 125.77,
     "end_age": 132.6,
     "parent": "Lower Cretaceous",
-    "color": "A6D975"
+    "color": "#A6D975"
   },
   {
     "name": "Valanginian",
     "start_age": 132.6,
     "end_age": 137.05,
     "parent": "Lower Cretaceous",
-    "color": "99D36A"
+    "color": "#99D36A"
   },
   {
     "name": "Berriasian",
     "start_age": 137.05,
     "end_age": 143.1,
     "parent": "Lower Cretaceous",
-    "color": "8CCD60"
+    "color": "#8CCD60"
   },
   {
     "name": "Tithonian",
     "start_age": 143.1,
     "end_age": 149.2,
     "parent": "Upper Jurassic",
-    "color": "D9F1F7"
+    "color": "#D9F1F7"
   },
   {
     "name": "Kimmeridgian",
     "start_age": 149.2,
     "end_age": 154.8,
     "parent": "Upper Jurassic",
-    "color": "CCECF4"
+    "color": "#CCECF4"
   },
   {
     "name": "Oxfordian",
     "start_age": 154.8,
     "end_age": 161.5,
     "parent": "Upper Jurassic",
-    "color": "BFE7F1"
+    "color": "#BFE7F1"
   },
   {
     "name": "Callovian",
     "start_age": 161.5,
     "end_age": 165.3,
     "parent": "Middle Jurassic",
-    "color": "BFE7E5"
+    "color": "#BFE7E5"
   },
   {
     "name": "Bathonian",
     "start_age": 165.3,
     "end_age": 168.2,
     "parent": "Middle Jurassic",
-    "color": "B3E2E3"
+    "color": "#B3E2E3"
   },
   {
     "name": "Bajocian",
     "start_age": 168.2,
     "end_age": 170.9,
     "parent": "Middle Jurassic",
-    "color": "A6DDE0"
+    "color": "#A6DDE0"
   },
   {
     "name": "Aalenian",
     "start_age": 170.9,
     "end_age": 174.7,
     "parent": "Middle Jurassic",
-    "color": "9AD9DD"
+    "color": "#9AD9DD"
   },
   {
     "name": "Toarcian",
     "start_age": 174.7,
     "end_age": 184.2,
     "parent": "Lower Jurassic",
-    "color": "99CEE3"
+    "color": "#99CEE3"
   },
   {
     "name": "Pliensbachian",
     "start_age": 184.2,
     "end_age": 192.9,
     "parent": "Lower Jurassic",
-    "color": "80C5DD"
+    "color": "#80C5DD"
   },
   {
     "name": "Sinemurian",
     "start_age": 192.9,
     "end_age": 199.5,
     "parent": "Lower Jurassic",
-    "color": "67BCD8"
+    "color": "#67BCD8"
   },
   {
     "name": "Hettangian",
     "start_age": 199.5,
     "end_age": 201.4,
     "parent": "Lower Jurassic",
-    "color": "4EB3D3"
+    "color": "#4EB3D3"
   },
   {
     "name": "Rhaetian",
     "start_age": 201.4,
     "end_age": 205.7,
     "parent": "Upper Triassic",
-    "color": "E3B9DB"
+    "color": "#E3B9DB"
   },
   {
     "name": "Norian",
     "start_age": 205.7,
     "end_age": 227.3,
     "parent": "Upper Triassic",
-    "color": "D6AAD3"
+    "color": "#D6AAD3"
   },
   {
     "name": "Carnian",
     "start_age": 227.3,
     "end_age": 237.0,
     "parent": "Upper Triassic",
-    "color": "C99BCB"
+    "color": "#C99BCB"
   },
   {
     "name": "Ladinian",
     "start_age": 237.0,
     "end_age": 241.464,
     "parent": "Middle Triassic",
-    "color": "C983BF"
+    "color": "#C983BF"
   },
   {
     "name": "Anisian",
     "start_age": 241.464,
     "end_age": 246.7,
     "parent": "Middle Triassic",
-    "color": "BC75B7"
+    "color": "#BC75B7"
   },
   {
     "name": "Olenekian",
     "start_age": 246.7,
     "end_age": 249.9,
     "parent": "Lower Triassic",
-    "color": "B051A5"
+    "color": "#B051A5"
   },
   {
     "name": "Induan",
     "start_age": 249.9,
     "end_age": 251.902,
     "parent": "Lower Triassic",
-    "color": "A4469F"
+    "color": "#A4469F"
   },
   {
     "name": "Changhsingian",
     "start_age": 251.902,
     "end_age": 254.14,
     "parent": "Lopingian",
-    "color": "FCC0B2"
+    "color": "#FCC0B2"
   },
   {
     "name": "Wuchiapingian",
     "start_age": 254.14,
     "end_age": 259.51,
     "parent": "Lopingian",
-    "color": "FCB4A2"
+    "color": "#FCB4A2"
   },
   {
     "name": "Capitanian",
     "start_age": 259.51,
     "end_age": 264.28,
     "parent": "Guadalupian",
-    "color": "FB9A85"
+    "color": "#FB9A85"
   },
   {
     "name": "Wordian",
     "start_age": 264.28,
     "end_age": 266.9,
     "parent": "Guadalupian",
-    "color": "FB8D76"
+    "color": "#FB8D76"
   },
   {
     "name": "Roadian",
     "start_age": 266.9,
     "end_age": 274.4,
     "parent": "Guadalupian",
-    "color": "FB8069"
+    "color": "#FB8069"
   },
   {
     "name": "Kungurian",
     "start_age": 274.4,
     "end_age": 283.3,
     "parent": "Cisuralian",
-    "color": "E38776"
+    "color": "#E38776"
   },
   {
     "name": "Artinskian",
     "start_age": 283.3,
     "end_age": 290.1,
     "parent": "Cisuralian",
-    "color": "E37B68"
+    "color": "#E37B68"
   },
   {
     "name": "Sakmarian",
     "start_age": 290.1,
     "end_age": 293.52,
     "parent": "Cisuralian",
-    "color": "E36F5C"
+    "color": "#E36F5C"
   },
   {
     "name": "Asselian",
     "start_age": 293.52,
     "end_age": 298.9,
     "parent": "Cisuralian",
-    "color": "E36350"
+    "color": "#E36350"
   },
   {
     "name": "Gzhelian",
     "start_age": 298.9,
     "end_age": 303.7,
     "parent": "Pennsylvanian",
-    "color": "CCD4C7"
+    "color": "#CCD4C7"
   },
   {
     "name": "Kasimovian",
     "start_age": 303.7,
     "end_age": 307.0,
     "parent": "Pennsylvanian",
-    "color": "BFD0C5"
+    "color": "#BFD0C5"
   },
   {
     "name": "Moscovian",
     "start_age": 307.0,
     "end_age": 315.2,
     "parent": "Pennsylvanian",
-    "color": "B3CBB9"
+    "color": "#B3CBB9"
   },
   {
     "name": "Bashkirian",
     "start_age": 315.2,
     "end_age": 323.4,
     "parent": "Pennsylvanian",
-    "color": "99C2B5"
+    "color": "#99C2B5"
   },
   {
     "name": "Serpukhovian",
     "start_age": 323.4,
     "end_age": 330.3,
     "parent": "Mississippian",
-    "color": "BFC26B"
+    "color": "#BFC26B"
   },
   {
     "name": "Visean",
     "start_age": 330.3,
     "end_age": 346.7,
     "parent": "Mississippian",
-    "color": "A6B96C"
+    "color": "#A6B96C"
   },
   {
     "name": "Tournaisian",
     "start_age": 346.7,
     "end_age": 358.86,
     "parent": "Mississippian",
-    "color": "8CB06C"
+    "color": "#8CB06C"
   },
   {
     "name": "Famennian",
     "start_age": 358.86,
     "end_age": 372.15,
     "parent": "Upper Devonian",
-    "color": "F2EDC5"
+    "color": "#F2EDC5"
   },
   {
     "name": "Frasnian",
     "start_age": 372.15,
     "end_age": 382.31,
     "parent": "Upper Devonian",
-    "color": "F2EDAD"
+    "color": "#F2EDAD"
   },
   {
     "name": "Givetian",
     "start_age": 382.31,
     "end_age": 387.95,
     "parent": "Middle Devonian",
-    "color": "F1E185"
+    "color": "#F1E185"
   },
   {
     "name": "Eifelian",
     "start_age": 387.95,
     "end_age": 393.47,
     "parent": "Middle Devonian",
-    "color": "F1D576"
+    "color": "#F1D576"
   },
   {
     "name": "Emsian",
     "start_age": 393.47,
     "end_age": 410.62,
     "parent": "Lower Devonian",
-    "color": "E5D075"
+    "color": "#E5D075"
   },
   {
     "name": "Pragian",
     "start_age": 410.62,
     "end_age": 413.02,
     "parent": "Lower Devonian",
-    "color": "E5C468"
+    "color": "#E5C468"
   },
   {
     "name": "Lochkovian",
     "start_age": 413.02,
     "end_age": 419.62,
     "parent": "Lower Devonian",
-    "color": "E5B75A"
+    "color": "#E5B75A"
   },
   {
     "name": "Pridoli",
     "start_age": 419.62,
     "end_age": 422.7,
     "parent": "Pridoli",
-    "color": "E6F5E1"
+    "color": "#E6F5E1"
   },
   {
     "name": "Ludfordian",
     "start_age": 422.7,
     "end_age": 425.0,
     "parent": "Ludlow",
-    "color": "D9F0DF"
+    "color": "#D9F0DF"
   },
   {
     "name": "Gorstian",
     "start_age": 425.0,
     "end_age": 426.7,
     "parent": "Ludlow",
-    "color": "CCECDD"
+    "color": "#CCECDD"
   },
   {
     "name": "Homerian",
     "start_age": 426.7,
     "end_age": 430.6,
     "parent": "Wenlock",
-    "color": "CCEBD1"
+    "color": "#CCEBD1"
   },
   {
     "name": "Sheinwoodian",
     "start_age": 430.6,
     "end_age": 432.9,
     "parent": "Wenlock",
-    "color": "BFE6C3"
+    "color": "#BFE6C3"
   },
   {
     "name": "Telychian",
     "start_age": 432.9,
     "end_age": 438.6,
     "parent": "Llandovery",
-    "color": "BFE6CF"
+    "color": "#BFE6CF"
   },
   {
     "name": "Aeronian",
     "start_age": 438.6,
     "end_age": 440.5,
     "parent": "Llandovery",
-    "color": "B3E1C2"
+    "color": "#B3E1C2"
   },
   {
     "name": "Rhuddanian",
     "start_age": 440.5,
     "end_age": 443.1,
     "parent": "Llandovery",
-    "color": "A6DCB5"
+    "color": "#A6DCB5"
   },
   {
     "name": "Hirnantian",
     "start_age": 443.1,
     "end_age": 445.2,
     "parent": "Upper Ordovician",
-    "color": "A6DBAB"
+    "color": "#A6DBAB"
   },
   {
     "name": "Katian",
     "start_age": 445.2,
     "end_age": 452.8,
     "parent": "Upper Ordovician",
-    "color": "99D69F"
+    "color": "#99D69F"
   },
   {
     "name": "Sandbian",
     "start_age": 452.8,
     "end_age": 458.2,
     "parent": "Upper Ordovician",
-    "color": "8CD094"
+    "color": "#8CD094"
   },
   {
     "name": "Darriwilian",
     "start_age": 458.2,
     "end_age": 469.4,
     "parent": "Middle Ordovician",
-    "color": "74C69C"
+    "color": "#74C69C"
   },
   {
     "name": "Dapingian",
     "start_age": 469.4,
     "end_age": 471.3,
     "parent": "Middle Ordovician",
-    "color": "66C092"
+    "color": "#66C092"
   },
   {
     "name": "Floian",
     "start_age": 471.3,
     "end_age": 477.1,
     "parent": "Lower Ordovician",
-    "color": "41B087"
+    "color": "#41B087"
   },
   {
     "name": "Tremadocian",
     "start_age": 477.1,
     "end_age": 486.85,
     "parent": "Lower Ordovician",
-    "color": "33A97E"
+    "color": "#33A97E"
   },
   {
     "name": "Stage 10",
     "start_age": 486.85,
     "end_age": 491.0,
     "parent": "Furongian",
-    "color": "E6F5C9"
+    "color": "#E6F5C9"
   },
   {
     "name": "Jiangshanian",
     "start_age": 491.0,
     "end_age": 494.2,
     "parent": "Furongian",
-    "color": "D9F0BB"
+    "color": "#D9F0BB"
   },
   {
     "name": "Paibian",
     "start_age": 494.2,
     "end_age": 497.0,
     "parent": "Furongian",
-    "color": "CCEBAE"
+    "color": "#CCEBAE"
   },
   {
     "name": "Guzhangian",
     "start_age": 497.0,
     "end_age": 500.5,
     "parent": "Miaolingian",
-    "color": "CCDFAA"
+    "color": "#CCDFAA"
   },
   {
     "name": "Drumian",
     "start_age": 500.5,
     "end_age": 504.5,
     "parent": "Miaolingian",
-    "color": "BFD99D"
+    "color": "#BFD99D"
   },
   {
     "name": "Wuliuan",
     "start_age": 504.5,
     "end_age": 506.5,
     "parent": "Miaolingian",
-    "color": "B3D492"
+    "color": "#B3D492"
   },
   {
     "name": "Stage 4",
     "start_age": 506.5,
     "end_age": 514.5,
     "parent": "Series 2",
-    "color": "B3CA8E"
+    "color": "#B3CA8E"
   },
   {
     "name": "Stage 3",
     "start_age": 514.5,
     "end_age": 521.0,
     "parent": "Series 2",
-    "color": "A6C583"
+    "color": "#A6C583"
   },
   {
     "name": "Stage 2",
     "start_age": 521.0,
     "end_age": 529.0,
     "parent": "Terreneuvian",
-    "color": "A6BA80"
+    "color": "#A6BA80"
   },
   {
     "name": "Fortunian",
     "start_age": 529.0,
     "end_age": 538.8,
     "parent": "Terreneuvian",
-    "color": "99B575"
+    "color": "#99B575"
   }
 ]

@@ -44,7 +44,7 @@ class StratColumnMaker(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Stratigraphic Column Maker")
-        self.setGeometry(100, 100, 960, 800)
+        self.setGeometry(100, 100, 1200, 800)
         
         # Central widget
         central_widget = QWidget()
@@ -64,14 +64,14 @@ class StratColumnMaker(QMainWindow):
     def validate_start(self, start_value):
         end_value = self.old_age_input.value()
         if start_value >= end_value:
-            self.old_age_input.setValue(round(start_value + 0.1, 2))
-        self.old_age_input.setMinimum(round(start_value + 0.01, 2))
+            self.old_age_input.setValue(round(start_value + 0.1, 1))
+        self.old_age_input.setMinimum(round(start_value + 0.1, 1))
 
     def validate_end(self, end_value):
         start_value = self.young_age_input.value()
         if end_value <= start_value:
-            self.young_age_input.setValue(round(end_value - 0.1, 2))
-        self.young_age_input.setMaximum(round(end_value - 0.01, 2))
+            self.young_age_input.setValue(round(end_value - 0.1, 1))
+        self.young_age_input.setMaximum(round(end_value - 0.1, 1))
     
     def create_control_panel(self):
         """Create the control panel with input fields and buttons"""
@@ -112,7 +112,8 @@ class StratColumnMaker(QMainWindow):
         form_layout.addWidget(QLabel("Youngest Stratigraphic Age (Ma):"))
 
         self.young_age_input = QDoubleSpinBox()
-        self.young_age_input.setRange(0.0, 10000.0)
+        self.young_age_input.setDecimals(1)
+        self.young_age_input.setRange(0.0, DEFAULT_OLD_AGE)
         self.young_age_input.setSingleStep(0.1)
         self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
 
@@ -120,7 +121,8 @@ class StratColumnMaker(QMainWindow):
 
         form_layout.addWidget(QLabel("Oldest Stratigraphic Age (Ma):"))
         self.old_age_input = QDoubleSpinBox()
-        self.old_age_input.setRange(0.0, 10000.0)
+        self.old_age_input.setDecimals(1)
+        self.old_age_input.setRange(0.0, DEFAULT_OLD_AGE)
         self.old_age_input.setSingleStep(0.1)
         self.old_age_input.setValue(DEFAULT_OLD_AGE)
         
@@ -196,7 +198,7 @@ class StratColumnMaker(QMainWindow):
         young_age = self.young_age_input.value()
         old_age = self.old_age_input.value()
 
-        layer = Layer.Layer(name, thickness, selected_rock)
+        layer = Layer.Layer(name, thickness, selected_rock, formation_top, young_age, old_age)
         
         self.strat_column.add_layer(layer)
         self.update_layer_table()
