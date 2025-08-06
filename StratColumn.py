@@ -9,6 +9,16 @@ from PySide6.QtCore import Qt, QRectF
 from ChronostratigraphicMapper import ChronostratigraphicMapper as chronomap
 from Lithology import RockCategory, RockProperties, RockType
 
+from enum import Enum
+
+DEFAULT_COLUMN_SIZE = 100
+
+class StratigraphicAgeTypes(Enum):
+    ERAS = 'eras'
+    PERIODS = 'periods'
+    EPOCHS = 'epochs'
+    AGES = 'ages'
+
 class StratColumn(QWidget):
     def __init__(self):
         super().__init__()
@@ -17,7 +27,17 @@ class StratColumn(QWidget):
         self.chronomap = chronomap()
         self.texture_brushes = None
         self.load_texture(scale_factor=0.10, crop_pixels=16)
+        self.display_options = {
+            'show_eras': False,
+            'show_periods': False,
+            'show_epochs': True,
+            'show_ages': True
+        }
     
+    def update_display_options(self, options):
+        """Slot to receive display option updates"""
+        self.display_options = options
+        self.update()
 
     def add_layer(self, layer: Layer):
         self.layers.append(layer)
@@ -91,12 +111,49 @@ class StratColumn(QWidget):
                 return
             
             # Column dimensions
-            era_col_width = 120  # Width for era column
-            col_width = 250      # Width for main column
-            era_col_x = 0       # Era column starts at left margin
-            col_x = era_col_x + era_col_width  # Main column immediately after era column (no gap)
+            era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
+            period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
+            epoch_col_width = DEFAULT_COLUMN_SIZE # Width for epoch column
+            age_col_width = DEFAULT_COLUMN_SIZE # Width for age column
+            col_width = DEFAULT_COLUMN_SIZE      # Width for main column
+            pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
+            
 
-            pattern_col_width = 120
+            # Calculate x positions based on enabled options
+            current_x = 0
+
+            # Era column
+            if self.display_options['show_eras']:
+                era_col_x = current_x
+                current_x += era_col_width
+            else:
+                era_col_x = None
+
+            # Period column
+            if self.display_options['show_periods']:
+                period_col_x = current_x
+                current_x += period_col_width
+            else:
+                period_col_x = None
+
+            # Epoch column
+            if self.display_options['show_epochs']:
+                epoch_col_x = current_x
+                current_x += epoch_col_width
+            else:
+                epoch_col_x = None
+
+            # Age column
+            if self.display_options['show_ages']:
+                age_col_x = current_x
+                current_x += age_col_width
+            else:
+                age_col_x = None
+
+            # Main column always comes after all geological time columns
+            col_x = current_x
+
+            # Pattern column comes after main column
             pattern_col_x = col_x + col_width
 
             start_y = 50
@@ -115,7 +172,7 @@ class StratColumn(QWidget):
             title_font.setPointSize(14)
             title_font.setBold(True)
             painter.setFont(title_font)
-            painter.drawText(era_col_x, 30, "Stratigraphic Column")
+            painter.drawText(0, 30, "Stratigraphic Column")
 
             # Draw each layer
             for i, layer in enumerate(self.layers):
@@ -129,9 +186,25 @@ class StratColumn(QWidget):
                 layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
                 layer_height = layer_thickness * scale
                 
-                # Draw era column for this layer (now on the left)
-                self.draw_era_column(painter, layer, layer_strat_ages, 
-                                    era_col_x, current_y, era_col_width, layer_height)
+                # Draw era column for this layer
+                if era_col_x is not None:
+                    self.draw_age_column(painter, layer, layer_strat_ages, 
+                                        era_col_x, current_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
+                
+                # Draw period column for this layer
+                if period_col_x is not None:
+                    self.draw_age_column(painter, layer, layer_strat_ages, 
+                                        period_col_x, current_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
+                    
+                # Draw epoch column for this layer
+                if epoch_col_x is not None:
+                    self.draw_age_column(painter, layer, layer_strat_ages, 
+                                        epoch_col_x, current_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
+                    
+                # Draw age column for this layer
+                if age_col_x is not None:
+                    self.draw_age_column(painter, layer, layer_strat_ages, 
+                                        age_col_x, current_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
                 
                 # Draw main layer rectangle
                 painter.setPen(QPen(Qt.black, 1))
@@ -195,14 +268,14 @@ class StratColumn(QWidget):
             painter.setBrush(QBrush(Qt.NoBrush))
         
         painter.drawRect(x, y, width, height)
-
-    def draw_era_column(self, painter, layer, layer_strat_ages, x, y, width, height):
-        """Draw the era column for a single layer"""
-        # Get eras from the layer's stratigraphic ages
-        eras = layer_strat_ages.get('eras', [])
         
-        if not eras:
-            # Draw empty rectangle if no eras
+    def draw_age_column(self, painter, layer, layer_strat_ages, x, y, width, height, age_name):
+        """Draw the age column for a single layer"""
+        # Get ages from the layer's stratigraphic ages
+        ages = layer_strat_ages.get(age_name, [])
+        
+        if not ages:
+            # Draw empty rectangle if no ages
             painter.setPen(QPen(Qt.gray, 1))
             painter.setBrush(QBrush(Qt.NoBrush))
             painter.drawRect(x, y, width, height)
@@ -216,15 +289,15 @@ class StratColumn(QWidget):
         if layer_age_range <= 0:
             return
         
-        # Draw each era proportionally
-        for era in eras:
-            era_name = era.get('name', 'Unknown')
-            era_young = era.get('start_age', layer_young)
-            era_old = era.get('end_age', layer_old)
+        # Draw each age proportionally
+        for age in ages:
+            age_name = age.get('name', 'Unknown')
+            age_young = age.get('start_age', layer_young)
+            age_old = age.get('end_age', layer_old)
             
-            # Calculate the overlap between layer and era
-            overlap_young = max(layer_young, era_young)
-            overlap_old = min(layer_old, era_old)
+            # Calculate the overlap between layer and age
+            overlap_young = max(layer_young, age_young)
+            overlap_old = min(layer_old, age_old)
             
             if overlap_old <= overlap_young:
                 continue
@@ -234,30 +307,30 @@ class StratColumn(QWidget):
             top_proportion = (overlap_young - layer_young) / layer_age_range
             bottom_proportion = (overlap_old - layer_young) / layer_age_range
             
-            era_y = y + (top_proportion * height)
-            era_height = (bottom_proportion - top_proportion) * height
+            age_y = y + (top_proportion * height)
+            age_height = (bottom_proportion - top_proportion) * height
             
-            # Draw era rectangle with color
-            color = QColor(era.get('color', '#c8c8c8'))
+            # Draw age rectangle with color
+            color = QColor(age.get('color', '#c8c8c8'))
             painter.setBrush(QBrush(color))
             painter.setPen(QPen(Qt.black, 1))
-            painter.drawRect(QRectF(x, era_y, width, era_height))
+            painter.drawRect(QRectF(x, age_y, width, age_height))
             
-            # Draw era label if there's enough space
-            if era_height > 15:
+            # Draw age label if there's enough space
+            if age_height > 15:
                 font = QFont()
                 font.setPointSize(9)
                 painter.setFont(font)
                 painter.setPen(QPen(Qt.black, 1))
                 
-                # Center the text in the era rectangle
-                text_rect = QRectF(x + 5, era_y + 2, width - 10, era_height - 4)
-                painter.drawText(text_rect, Qt.AlignCenter, era_name)
+                # Center the text in the age rectangle
+                text_rect = QRectF(x + 5, age_y + 2, width - 10, age_height - 4)
+                painter.drawText(text_rect, Qt.AlignCenter, age_name)
                 
                 # Add age labels if space permits
-                if era_height > 30:
+                if age_height > 30:
                     font.setPointSize(8)
                     painter.setFont(font)
                     painter.setPen(QPen(Qt.black, 1))
-                    age_text = f"{overlap_young:.1f}-{overlap_old:.1f} Ma"
+                    age_text = f"{overlap_young}-{overlap_old} Ma"
                     painter.drawText(text_rect, Qt.AlignBottom | Qt.AlignCenter, age_text)

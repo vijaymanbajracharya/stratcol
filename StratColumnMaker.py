@@ -8,8 +8,8 @@ from Lithology import RockCategory, RockProperties, RockType
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
                                QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
-                               QDoubleSpinBox)
-from PySide6.QtCore import Qt
+                               QDoubleSpinBox, QCheckBox)
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from functools import partial
 
@@ -41,6 +41,8 @@ def populate_rock_type_combo(combo_box):
         combo_box.setItemData(combo_box.count() - 1, rock)
 
 class StratColumnMaker(QMainWindow):
+    display_options_changed = Signal(dict)
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Stratigraphic Column Maker")
@@ -132,13 +134,34 @@ class StratColumnMaker(QMainWindow):
 
         self.young_age_input.valueChanged.connect(self.validate_start)
         self.old_age_input.valueChanged.connect(self.validate_end)
+
+        # Eras, Periods, Epochs, Ages
+        layout.addWidget(QLabel("Display Options:"))
+        checkbox_layout = QHBoxLayout()
         
-        # Color selection
-        self.color_button = QPushButton("Select Color")
-        self.color_button.clicked.connect(self.select_color)
-        self.selected_color = QColor(200, 200, 200)
-        self.update_color_button()
-        layout.addWidget(self.color_button)
+        self.checkbox_eras = QCheckBox("Show Eras")
+        self.checkbox_periods = QCheckBox("Show Periods") 
+        self.checkbox_epochs = QCheckBox("Show Epochs")
+        self.checkbox_ages = QCheckBox("Show Ages")
+
+        # Default state
+        self.checkbox_eras.setChecked(False)
+        self.checkbox_periods.setChecked(False)
+        self.checkbox_epochs.setChecked(True)
+        self.checkbox_ages.setChecked(True)
+
+        # Connect to update method that will trigger repaints
+        self.checkbox_eras.stateChanged.connect(self.on_checkbox_changed)
+        self.checkbox_periods.stateChanged.connect(self.on_checkbox_changed)
+        self.checkbox_epochs.stateChanged.connect(self.on_checkbox_changed)
+        self.checkbox_ages.stateChanged.connect(self.on_checkbox_changed)
+        
+        checkbox_layout.addWidget(self.checkbox_eras)
+        checkbox_layout.addWidget(self.checkbox_periods)
+        checkbox_layout.addWidget(self.checkbox_epochs)
+        checkbox_layout.addWidget(self.checkbox_ages)
+
+        layout.addLayout(checkbox_layout)
         
         # Add layer button
         add_button = QPushButton("Add Layer")
@@ -168,20 +191,6 @@ class StratColumnMaker(QMainWindow):
         layout.addWidget(clear_button)
         
         return panel
-        
-    def update_color_button(self):
-        """Update the color button to show selected color"""
-        self.color_button.setStyleSheet(
-            f"background-color: {self.selected_color.name()}; "
-            f"color: {'white' if self.selected_color.lightness() < 128 else 'black'};"
-        )
-    
-    def select_color(self):
-        """Open color picker dialog"""
-        color = QColorDialog.getColor(self.selected_color, self)
-        if color.isValid():
-            self.selected_color = color
-            self.update_color_button()
     
     def add_layer(self):
         name = self.name_input.text().strip()
@@ -208,6 +217,20 @@ class StratColumnMaker(QMainWindow):
         self.formation_top_input.setValue(DEFAULT_FORMATION_TOP)
         self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
         self.old_age_input.setValue(DEFAULT_OLD_AGE)
+
+    def get_display_options(self):
+        """Return the current state of all checkboxes as a dictionary"""
+        return {
+            'show_eras': self.checkbox_eras.isChecked(),
+            'show_periods': self.checkbox_periods.isChecked(),
+            'show_epochs': self.checkbox_epochs.isChecked(),
+            'show_ages': self.checkbox_ages.isChecked()
+        }
+    
+    def on_checkbox_changed(self):
+        """Called when any checkbox state changes"""
+        options = self.get_display_options()
+        self.display_options_changed.emit(options)
 
     def update_layer_table(self):
         self.layer_table.setRowCount(len(self.strat_column.layers))
