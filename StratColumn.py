@@ -3,9 +3,9 @@ import pdb
 import os
 import re
 
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QMessageBox
 from PySide6.QtGui import QPainter, QColor, QPen, QFont, QBrush, QPixmap
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QRect
 from ChronostratigraphicMapper import ChronostratigraphicMapper as chronomap
 from Lithology import RockCategory, RockProperties, RockType
 
@@ -39,10 +39,44 @@ class StratColumn(QWidget):
         self.display_options = options
         self.update()
 
+    def check_layer_overlap(self, new_layer):
+        """Check if a new layer would overlap with existing layers"""
+        new_top = new_layer.formation_top
+        new_bottom = new_layer.formation_top + new_layer.thickness
+        
+        for existing_layer in self.layers:
+            existing_top = existing_layer.formation_top
+            existing_bottom = existing_layer.formation_top + existing_layer.thickness
+            
+            # Check for overlap: layers overlap if one starts before the other ends
+            if (new_top < existing_bottom and new_bottom > existing_top):
+                return True, existing_layer
+        
+        return False, None
+
     def add_layer(self, layer: Layer):
+        # Check for overlaps before adding
+        has_overlap, overlapping_layer = self.check_layer_overlap(layer)
+        
+        if has_overlap:
+            # Show warning dialog
+            msg = QMessageBox()
+            msg.setWindowTitle("Layer Overlap Warning")
+            msg.setText(f"The new layer '{layer.name}' (top: {layer.formation_top}m, thickness: {layer.thickness}m) "
+                       f"would overlap with existing layer '{overlapping_layer.name}' "
+                       f"(top: {overlapping_layer.formation_top}m, thickness: {overlapping_layer.thickness}m).")
+            msg.setInformativeText("The layer will not be added. Please adjust the formation top or thickness.")
+            msg.setIcon(QMessageBox.Warning)
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec()
+            return False
+        
         self.layers.append(layer)
+        # Sort layers by formation_top (shallowest first)
+        self.layers.sort(key=lambda l: l.formation_top)
         # Trigger paint event
         self.update()
+        return True
         
     def remove_layer(self, index):
         if 0 <= index < len(self.layers):
@@ -99,8 +133,18 @@ class StratColumn(QWidget):
                     else:
                         print(f"Failed to load {filename}")
 
+    def get_depth_range(self):
+        """Calculate the total depth range needed for display"""
+        if not self.layers:
+            return 0, 100  # Default range
+        
+        min_depth = min(layer.formation_top for layer in self.layers)
+        max_depth = max(layer.formation_top + layer.thickness for layer in self.layers)
+        
+        return min_depth, max_depth
+
     def paintEvent(self, event):
-        """Draw the stratigraphic column with era display"""
+        """Draw the stratigraphic column with era display and formation tops"""
         painter = QPainter(self)
 
         try:
@@ -118,7 +162,6 @@ class StratColumn(QWidget):
             col_width = DEFAULT_COLUMN_SIZE      # Width for main column
             pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
             
-
             # Calculate x positions based on enabled options
             current_x = 0
 
@@ -157,14 +200,16 @@ class StratColumn(QWidget):
             pattern_col_x = col_x + col_width
 
             start_y = 50
-            
-            # Calculate total thickness for scaling
-            total_thickness = sum(layer.thickness for layer in self.layers)
             available_height = self.height() - 150
-            scale = available_height / total_thickness if total_thickness > 0 else 1
             
-            current_y = start_y
-            cumulative_depth = 0
+            # Get depth range and calculate scaling
+            min_depth, max_depth = self.get_depth_range()
+            total_depth_range = max_depth - min_depth
+            
+            if total_depth_range <= 0:
+                total_depth_range = 1  # Avoid division by zero
+            
+            scale = available_height / total_depth_range
             
             # Draw title
             painter.setPen(QPen(Qt.black, 1))
@@ -174,9 +219,36 @@ class StratColumn(QWidget):
             painter.setFont(title_font)
             painter.drawText(0, 30, "Stratigraphic Column")
 
-            # Draw each layer
-            for i, layer in enumerate(self.layers):
-                # Fetch required data
+            # Sort layers by formation_top to ensure proper order
+            sorted_layers = sorted(self.layers, key=lambda l: l.formation_top)
+            
+            # Draw column backgrounds (empty spaces)
+            painter.setPen(QPen(Qt.black, 1))
+            painter.setBrush(QBrush(Qt.white))
+            
+            # Draw background for all columns
+            column_positions = []
+            if era_col_x is not None:
+                column_positions.append((era_col_x, era_col_width))
+            if period_col_x is not None:
+                column_positions.append((period_col_x, period_col_width))
+            if epoch_col_x is not None:
+                column_positions.append((epoch_col_x, epoch_col_width))
+            if age_col_x is not None:
+                column_positions.append((age_col_x, age_col_width))
+            column_positions.append((col_x, col_width))
+            column_positions.append((pattern_col_x, pattern_col_width))
+            
+            for col_x_pos, col_width_pos in column_positions:
+                painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
+
+            # Draw each layer at its correct position
+            for layer in sorted_layers:
+                # Calculate layer position based on formation_top
+                layer_top_y = start_y + ((layer.formation_top - min_depth) * scale)
+                layer_height = layer.thickness * scale
+                
+                # Get layer data
                 layer_name = layer.name
                 layer_thickness = layer.thickness
                 layer_rock_type = layer.rock_type
@@ -184,32 +256,31 @@ class StratColumn(QWidget):
                 layer_young_age = layer.young_age
                 layer_old_age = layer.old_age
                 layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
-                layer_height = layer_thickness * scale
                 
                 # Draw era column for this layer
                 if era_col_x is not None:
                     self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        era_col_x, current_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
+                                        era_col_x, layer_top_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
                 
                 # Draw period column for this layer
                 if period_col_x is not None:
                     self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        period_col_x, current_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
+                                        period_col_x, layer_top_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
                     
                 # Draw epoch column for this layer
                 if epoch_col_x is not None:
                     self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        epoch_col_x, current_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
+                                        epoch_col_x, layer_top_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
                     
                 # Draw age column for this layer
                 if age_col_x is not None:
                     self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        age_col_x, current_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
+                                        age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
                 
                 # Draw main layer rectangle
-                painter.setPen(QPen(Qt.black, 1))
-                painter.setBrush(QBrush(Qt.NoBrush))
-                painter.drawRect(col_x, current_y, col_width, layer_height)
+                painter.setPen(QPen(Qt.black, 2))
+                painter.setBrush(QBrush(Qt.white))
+                painter.drawRect(col_x, layer_top_y, col_width, layer_height)
                 
                 # Draw layer label
                 painter.setPen(QPen(Qt.black, 1))
@@ -217,40 +288,70 @@ class StratColumn(QWidget):
                 font.setPointSize(10)
                 painter.setFont(font)
                 
-                text_rect = painter.boundingRect(col_x + 5, current_y + 5, 
-                                            col_width - 10, layer_height - 10,
-                                            Qt.AlignLeft | Qt.AlignTop,
-                                            f"{layer_name}\n{layer.rock_type_display_name}\n{layer_thickness}m")
+                text_rect = QRect(col_x + 5, layer_top_y + 5, col_width - 10, layer_height - 10)
                 
-                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop,
-                            f"{layer_name}\n{layer.rock_type_display_name}\n{layer_thickness}m")
+                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap | Qt.TextWrapAnywhere,
+                            f"{layer_name}\n{layer.rock_type_display_name}\n{layer_thickness}m\nTop: {layer_formation_top}m")
                 
                 # Draw pattern column for this layer
                 self.draw_pattern_column(painter, layer, 
-                                   pattern_col_x, current_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
+                                   pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
             
-                current_y += layer_height
-            
-            # Draw depth scale (position it after the main column)
+            # Draw depth scale (position it after the pattern column)
             painter.setPen(QPen(Qt.black, 2))
             scale_x = pattern_col_x + pattern_col_width + 20
-            painter.drawLine(scale_x, start_y, scale_x, current_y)
+            painter.drawLine(scale_x, start_y, scale_x, start_y + available_height)
             
-            # Add scale markers
-            if total_thickness > 0:
-                depth = 0
-                y_pos = start_y
-                
-                for layer in self.layers:
-                    layer_height = layer.thickness * scale
+            # Add scale markers based on actual depths
+            painter.setPen(QPen(Qt.black, 1))
+            font = QFont()
+            font.setPointSize(9)
+            painter.setFont(font)
+            
+            # Calculate appropriate scale intervals
+            depth_interval = max(1, int(total_depth_range / 10))  # Aim for about 10 markers
+            
+            # Round to nice numbers with larger increments
+            if depth_interval <= 1:
+                depth_interval = 1
+            elif depth_interval <= 2:
+                depth_interval = 2
+            elif depth_interval <= 5:
+                depth_interval = 5
+            elif depth_interval <= 10:
+                depth_interval = 10
+            elif depth_interval <= 20:
+                depth_interval = 20
+            elif depth_interval <= 25:
+                depth_interval = 25
+            elif depth_interval <= 50:
+                depth_interval = 50
+            elif depth_interval <= 100:
+                depth_interval = 100
+            elif depth_interval <= 200:
+                depth_interval = 200
+            elif depth_interval <= 250:
+                depth_interval = 250
+            elif depth_interval <= 500:
+                depth_interval = 500
+            else:
+                # For very large ranges, use increments of 1000, 2000, 5000, etc.
+                magnitude = 10 ** (len(str(int(depth_interval))) - 1)
+                if depth_interval <= 2 * magnitude:
+                    depth_interval = magnitude
+                elif depth_interval <= 5 * magnitude:
+                    depth_interval = 2 * magnitude
+                else:
+                    depth_interval = 5 * magnitude
+            
+            # Draw scale markers
+            current_depth = int(min_depth / depth_interval) * depth_interval
+            while current_depth <= max_depth:
+                if current_depth >= min_depth:
+                    y_pos = start_y + ((current_depth - min_depth) * scale)
                     painter.drawLine(scale_x, y_pos, scale_x + 10, y_pos)
-                    painter.drawText(scale_x + 15, y_pos + 5, f"{depth:.1f}m")
-                    depth += layer.thickness
-                    y_pos += layer_height
-                
-                # Final depth marker
-                painter.drawLine(scale_x, y_pos, scale_x + 10, y_pos)
-                painter.drawText(scale_x + 15, y_pos + 5, f"{depth:.1f}m")
+                    painter.drawText(scale_x + 15, y_pos + 5, f"{current_depth:.0f}m")
+                current_depth += depth_interval
                 
         finally:
             painter.end()
@@ -275,10 +376,7 @@ class StratColumn(QWidget):
         ages = layer_strat_ages.get(age_name, [])
         
         if not ages:
-            # Draw empty rectangle if no ages
-            painter.setPen(QPen(Qt.gray, 1))
-            painter.setBrush(QBrush(Qt.NoBrush))
-            painter.drawRect(x, y, width, height)
+            # Draw empty rectangle if no ages (will show background)
             return
         
         # Layer's age range

@@ -3,6 +3,7 @@ import sys
 import pdb
 import StratColumn as sc
 import Layer
+import os
 
 from Lithology import RockCategory, RockProperties, RockType
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
@@ -250,11 +251,12 @@ class StratColumnMaker(QMainWindow):
         self.strat_column.remove_layer(index)
         self.update_layer_table()
     
-    def add_example_layers(self):
-        pass
-    
     def save_column(self):
-        pass
+        pixmap = self.strat_column.grab()
+    
+        # Save as PNG
+        os.makedirs("output", exist_ok=True)
+        pixmap.save("output\\strat_column.png", "PNG")
     
     def load_column(self):
         pass
