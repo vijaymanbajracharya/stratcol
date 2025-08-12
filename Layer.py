@@ -1,15 +1,17 @@
 from Lithology import RockType, RockCategory, RockProperties
+from Deposition import DepositionalEnvironment
 from typing import Optional
 
 class Layer:
     def __init__(self, name: str, thickness: float, rock_type: RockType, formation_top: Optional[int] = None, 
-                 young_age: Optional[float] = None, old_age: Optional[float] = None):
+                 young_age: Optional[float] = None, old_age: Optional[float] = None, dep_env: Optional[DepositionalEnvironment] = None):
         self.name = name
         self.thickness = thickness
         self.rock_type = rock_type
         self.formation_top = formation_top
         self.young_age = young_age
         self.old_age = old_age
+        self.dep_env = dep_env
     
     @property
     def category(self) -> RockCategory:
@@ -34,7 +36,8 @@ class Layer:
             'rock_type': self.rock_type.value,
             'formation_top': self.formation_top,
             'young_age': self.young_age,
-            'old_age': self.old_age
+            'old_age': self.old_age,
+            'depositional_environment': self.dep_env
         }
     
     @classmethod

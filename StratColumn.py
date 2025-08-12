@@ -74,6 +74,7 @@ class StratColumn(QWidget):
         self.layers.append(layer)
         # Sort layers by formation_top (shallowest first)
         self.layers.sort(key=lambda l: l.formation_top)
+
         # Trigger paint event
         self.update()
         return True
@@ -161,6 +162,7 @@ class StratColumn(QWidget):
             age_col_width = DEFAULT_COLUMN_SIZE # Width for age column
             col_width = DEFAULT_COLUMN_SIZE      # Width for main column
             pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
+            depositional_col_width = DEFAULT_COLUMN_SIZE / 4
             
             # Calculate x positions based on enabled options
             current_x = 0
@@ -198,6 +200,9 @@ class StratColumn(QWidget):
 
             # Pattern column comes after main column
             pattern_col_x = col_x + col_width
+
+            # Depositional column comes after pattern column
+            depoitional_col_x = pattern_col_x + pattern_col_width
 
             start_y = 50
             available_height = self.height() - 150
@@ -296,10 +301,14 @@ class StratColumn(QWidget):
                 # Draw pattern column for this layer
                 self.draw_pattern_column(painter, layer, 
                                    pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
+                
+                # Draw the depositional environment for this layer
+                self.draw_depositional_environment_column(painter, layer, 
+                                                    depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
             
             # Draw depth scale (position it after the pattern column)
             painter.setPen(QPen(Qt.black, 2))
-            scale_x = pattern_col_x + pattern_col_width + 20
+            scale_x = depoitional_col_x + depositional_col_width + 20
             painter.drawLine(scale_x, start_y, scale_x, start_y + available_height)
             
             # Add scale markers based on actual depths
@@ -432,3 +441,14 @@ class StratColumn(QWidget):
                     painter.setPen(QPen(Qt.black, 1))
                     age_text = f"{overlap_young}-{overlap_old} Ma"
                     painter.drawText(text_rect, Qt.AlignBottom | Qt.AlignCenter, age_text)
+    
+    def draw_depositional_environment_column(self, painter, layer, x, y, width, height):
+        layer_dep_env_name = layer.dep_env.display_name
+        layer_dep_env_color = layer.dep_env.color
+        painter.setBrush(QBrush(QColor(layer_dep_env_color)))
+        painter.setPen(QPen(Qt.black, 1))
+        painter.drawRect(x, y, width, height)
+
+        # text_rect = QRect(x + 5, y + 5, width - 16, height - 10)
+        # painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap | Qt.TextWrapAnywhere,
+        #                     f"{layer_dep_env_name.upper()}")

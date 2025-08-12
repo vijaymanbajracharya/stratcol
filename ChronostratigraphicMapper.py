@@ -8,7 +8,7 @@ class ChronostratigraphicMapper:
     This design makes it easy to update geological time scale data without modifying code.
     """
     
-    def __init__(self, data_directory: str = "chrono_data"):
+    def __init__(self, data_directory: str = "data"):
         """
         Initialize the mapper with data from JSON files.
         

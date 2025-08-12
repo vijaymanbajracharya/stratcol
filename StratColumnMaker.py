@@ -6,6 +6,7 @@ import Layer
 import os
 
 from Lithology import RockCategory, RockProperties, RockType
+from Deposition import DepositionalEnvironment
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
                                QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
@@ -40,6 +41,15 @@ def populate_rock_type_combo(combo_box):
         display_name = RockProperties.get_display_name(rock)
         combo_box.addItem(display_name)
         combo_box.setItemData(combo_box.count() - 1, rock)
+
+def populate_dep_env_combo(combo_box):
+    """Populate QComboBox with depositional environments"""
+    combo_box.clear()
+
+    # Add items from json
+    for env in DepositionalEnvironment:
+        combo_box.addItem(env.display_name)
+        combo_box.setItemData(combo_box.count() - 1, env)
 
 class StratColumnMaker(QMainWindow):
     display_options_changed = Signal(dict)
@@ -96,6 +106,12 @@ class StratColumnMaker(QMainWindow):
         self.rock_type_combo = QComboBox()
         populate_rock_type_combo(self.rock_type_combo)
         layout.addWidget(self.rock_type_combo)
+
+        # Depositional Environment
+        layout.addWidget(QLabel("Depositional Environment:"))
+        self.dep_env_combo = QComboBox()
+        populate_dep_env_combo(self.dep_env_combo)
+        layout.addWidget(self.dep_env_combo)
         
         # Thickness
         layout.addWidget(QLabel("Thickness (m):"))
@@ -207,8 +223,10 @@ class StratColumnMaker(QMainWindow):
         formation_top = self.formation_top_input.value()
         young_age = self.young_age_input.value()
         old_age = self.old_age_input.value()
+        
+        selected_dep_env = self.dep_env_combo.currentData()
 
-        layer = Layer.Layer(name, thickness, selected_rock, formation_top, young_age, old_age)
+        layer = Layer.Layer(name, thickness, selected_rock, formation_top, young_age, old_age, selected_dep_env)
         
         self.strat_column.add_layer(layer)
         self.update_layer_table()
