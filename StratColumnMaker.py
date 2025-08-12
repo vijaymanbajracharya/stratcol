@@ -233,7 +233,7 @@ class StratColumnMaker(QMainWindow):
 
         self.name_input.clear()
         self.thickness_input.setValue(DEFAULT_THICKNESS)
-        self.formation_top_input.setValue(DEFAULT_FORMATION_TOP)
+        self.formation_top_input.setValue(self.strat_column.max_depth)
         self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
         self.old_age_input.setValue(DEFAULT_OLD_AGE)
 

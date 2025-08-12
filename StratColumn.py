@@ -27,6 +27,7 @@ class StratColumn(QWidget):
         self.chronomap = chronomap()
         self.texture_brushes = None
         self.load_texture(scale_factor=0.10, crop_pixels=16)
+        self.max_depth = 0.0
         self.display_options = {
             'show_eras': False,
             'show_periods': False,
@@ -74,6 +75,9 @@ class StratColumn(QWidget):
         self.layers.append(layer)
         # Sort layers by formation_top (shallowest first)
         self.layers.sort(key=lambda l: l.formation_top)
+
+        _, max_depth = self.get_depth_range()
+        self.max_depth = max_depth
 
         # Trigger paint event
         self.update()
