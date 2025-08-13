@@ -8,6 +8,7 @@ from PySide6.QtGui import QPainter, QColor, QPen, QFont, QBrush, QPixmap
 from PySide6.QtCore import Qt, QRectF, QRect
 from ChronostratigraphicMapper import ChronostratigraphicMapper as chronomap
 from Lithology import RockCategory, RockProperties, RockType
+from app import ScalingMode
 
 from enum import Enum
 
@@ -34,7 +35,13 @@ class StratColumn(QWidget):
             'show_epochs': True,
             'show_ages': True
         }
+        self.scaling_mode = ScalingMode.FORMATION_TOP_THICKNESS
     
+    def update_scaling_mode(self, scaling_mode):
+        '''Change scaling mode'''
+        self.scaling_mode = scaling_mode
+        self.update()
+
     def update_display_options(self, options):
         """Slot to receive display option updates"""
         self.display_options = options
@@ -141,13 +148,394 @@ class StratColumn(QWidget):
     def get_depth_range(self):
         """Calculate the total depth range needed for display"""
         if not self.layers:
-            return 0, 100  # Default range
+            raise Exception("Attempted to find depth when no layers exist")
         
         min_depth = min(layer.formation_top for layer in self.layers)
         max_depth = max(layer.formation_top + layer.thickness for layer in self.layers)
         
         return min_depth, max_depth
+    
+    def get_age_range(self):
+        """Calculate the total age range needed for display"""
+        if not self.layers:
+            raise Exception("Attempted to find age when no layers exist")
+        
+        all_ages = []
+        for layer in self.layers:
+            all_ages.extend([layer.young_age, layer.old_age])
+        
+        return min(all_ages), max(all_ages)
+    
+    def paint_scaling_mode_0(self, painter):
+        # Column dimensions
+        era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
+        period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
+        epoch_col_width = DEFAULT_COLUMN_SIZE # Width for epoch column
+        age_col_width = DEFAULT_COLUMN_SIZE # Width for age column
+        col_width = DEFAULT_COLUMN_SIZE      # Width for main column
+        pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
+        depositional_col_width = DEFAULT_COLUMN_SIZE # Width for depositional environment column
+        
+        # Calculate x positions based on enabled options
+        current_x = 0
 
+        # Era column
+        if self.display_options['show_eras']:
+            era_col_x = current_x
+            current_x += era_col_width
+        else:
+            era_col_x = None
+
+        # Period column
+        if self.display_options['show_periods']:
+            period_col_x = current_x
+            current_x += period_col_width
+        else:
+            period_col_x = None
+
+        # Epoch column
+        if self.display_options['show_epochs']:
+            epoch_col_x = current_x
+            current_x += epoch_col_width
+        else:
+            epoch_col_x = None
+
+        # Age column
+        if self.display_options['show_ages']:
+            age_col_x = current_x
+            current_x += age_col_width
+        else:
+            age_col_x = None
+
+        # Main column always comes after all geological time columns
+        col_x = current_x
+
+        # Pattern column comes after main column
+        pattern_col_x = col_x + col_width
+
+        # Depositional column comes after pattern column
+        depoitional_col_x = pattern_col_x + pattern_col_width
+
+        start_y = 50
+        available_height = self.height() - 150
+        
+        # Get depth range and calculate scaling
+        min_depth, max_depth = self.get_depth_range()
+        total_depth_range = max_depth - min_depth
+        
+        if total_depth_range <= 0:
+            total_depth_range = 1  # Avoid division by zero
+        
+        scale = available_height / total_depth_range
+        
+        # Draw title
+        painter.setPen(QPen(Qt.black, 1))
+        title_font = QFont()
+        title_font.setPointSize(14)
+        title_font.setBold(True)
+        painter.setFont(title_font)
+        painter.drawText(0, 30, "Stratigraphic Column")
+
+        # Sort layers by formation_top to ensure proper order
+        sorted_layers = sorted(self.layers, key=lambda l: l.formation_top)
+        
+        # Draw column backgrounds (empty spaces)
+        painter.setPen(QPen(Qt.black, 1))
+        painter.setBrush(QBrush(Qt.white))
+        
+        # Draw background for all columns
+        column_positions = []
+        if era_col_x is not None:
+            column_positions.append((era_col_x, era_col_width))
+        if period_col_x is not None:
+            column_positions.append((period_col_x, period_col_width))
+        if epoch_col_x is not None:
+            column_positions.append((epoch_col_x, epoch_col_width))
+        if age_col_x is not None:
+            column_positions.append((age_col_x, age_col_width))
+        column_positions.append((col_x, col_width))
+        column_positions.append((pattern_col_x, pattern_col_width))
+        
+        for col_x_pos, col_width_pos in column_positions:
+            painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
+
+        # Draw each layer at its correct position
+        for layer in sorted_layers:
+            # Calculate layer position based on formation_top
+            layer_top_y = start_y + ((layer.formation_top - min_depth) * scale)
+            layer_height = layer.thickness * scale
+            
+            # Get layer data
+            layer_name = layer.name
+            layer_thickness = layer.thickness
+            layer_rock_type = layer.rock_type
+            layer_formation_top = layer.formation_top
+            layer_young_age = layer.young_age
+            layer_old_age = layer.old_age
+            layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
+            
+            # Draw era column for this layer
+            if era_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    era_col_x, layer_top_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
+            
+            # Draw period column for this layer
+            if period_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    period_col_x, layer_top_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
+                
+            # Draw epoch column for this layer
+            if epoch_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    epoch_col_x, layer_top_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
+                
+            # Draw age column for this layer
+            if age_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
+            
+            # Draw main layer rectangle
+            painter.setPen(QPen(Qt.black, 2))
+            painter.setBrush(QBrush(Qt.white))
+            painter.drawRect(col_x, layer_top_y, col_width, layer_height)
+            
+            # Draw layer label
+            painter.setPen(QPen(Qt.black, 1))
+            font = QFont()
+            font.setPointSize(10)
+            painter.setFont(font)
+            
+            text_rect = QRect(col_x + 5, layer_top_y + 5, col_width - 10, layer_height - 10)
+            
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+                        f"{layer_name}\n{layer.rock_type_display_name}\n{layer_thickness}m\nTop: {layer_formation_top}m")
+            
+            # Draw pattern column for this layer
+            self.draw_pattern_column(painter, layer, 
+                                pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
+            
+            # Draw the depositional environment for this layer
+            self.draw_depositional_environment_column(painter, layer, 
+                                                depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
+        
+        # Draw depth scale (position it after the pattern column)
+        painter.setPen(QPen(Qt.black, 2))
+        scale_x = depoitional_col_x + depositional_col_width + 20
+        painter.drawLine(scale_x, start_y, scale_x, start_y + available_height)
+        
+        # Add scale markers based on actual depths
+        painter.setPen(QPen(Qt.black, 1))
+        font = QFont()
+        font.setPointSize(9)
+        painter.setFont(font)
+        
+        # Calculate appropriate scale intervals
+        depth_interval = max(1, int(total_depth_range / 10))  # Aim for about 10 markers
+        
+        # Round to nice numbers with larger increments
+        if depth_interval <= 1:
+            depth_interval = 1
+        elif depth_interval <= 2:
+            depth_interval = 2
+        elif depth_interval <= 5:
+            depth_interval = 5
+        elif depth_interval <= 10:
+            depth_interval = 10
+        elif depth_interval <= 20:
+            depth_interval = 20
+        elif depth_interval <= 25:
+            depth_interval = 25
+        elif depth_interval <= 50:
+            depth_interval = 50
+        elif depth_interval <= 100:
+            depth_interval = 100
+        elif depth_interval <= 200:
+            depth_interval = 200
+        elif depth_interval <= 250:
+            depth_interval = 250
+        elif depth_interval <= 500:
+            depth_interval = 500
+        else:
+            # For very large ranges, use increments of 1000, 2000, 5000, etc.
+            magnitude = 10 ** (len(str(int(depth_interval))) - 1)
+            if depth_interval <= 2 * magnitude:
+                depth_interval = magnitude
+            elif depth_interval <= 5 * magnitude:
+                depth_interval = 2 * magnitude
+            else:
+                depth_interval = 5 * magnitude
+        
+        # Draw scale markers
+        current_depth = int(min_depth / depth_interval) * depth_interval
+        while current_depth <= max_depth:
+            if current_depth >= min_depth:
+                y_pos = start_y + ((current_depth - min_depth) * scale)
+                painter.drawLine(scale_x, y_pos, scale_x + 10, y_pos)
+                painter.drawText(scale_x + 15, y_pos + 5, f"{current_depth:.0f}m")
+            current_depth += depth_interval
+
+    def paint_scaling_mode_1(self, painter):
+        # Column dimensions
+        era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
+        period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
+        epoch_col_width = DEFAULT_COLUMN_SIZE # Width for epoch column
+        age_col_width = DEFAULT_COLUMN_SIZE # Width for age column
+        col_width = DEFAULT_COLUMN_SIZE      # Width for main column
+        pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
+        depositional_col_width = DEFAULT_COLUMN_SIZE # Width for depositional environment column
+        
+        # Calculate x positions based on enabled options
+        current_x = 0
+
+        # Era column
+        if self.display_options['show_eras']:
+            era_col_x = current_x
+            current_x += era_col_width
+        else:
+            era_col_x = None
+
+        # Period column
+        if self.display_options['show_periods']:
+            period_col_x = current_x
+            current_x += period_col_width
+        else:
+            period_col_x = None
+
+        # Epoch column
+        if self.display_options['show_epochs']:
+            epoch_col_x = current_x
+            current_x += epoch_col_width
+        else:
+            epoch_col_x = None
+
+        # Age column
+        if self.display_options['show_ages']:
+            age_col_x = current_x
+            current_x += age_col_width
+        else:
+            age_col_x = None
+
+        # Main column always comes after all geological time columns
+        col_x = current_x
+
+        # Pattern column comes after main column
+        pattern_col_x = col_x + col_width
+
+        # Depositional column comes after pattern column
+        depoitional_col_x = pattern_col_x + pattern_col_width
+
+        start_y = 50
+        available_height = self.height() - 150
+        
+        # Sort layers by age - youngest (lowest age value) at top, oldest at bottom
+        sorted_layers = sorted(self.layers, key=lambda l: l.young_age)
+        
+        # Calculate total age span across all layers (ignoring gaps)
+        total_age_span = sum(layer.old_age - layer.young_age for layer in sorted_layers)
+        
+        if total_age_span <= 0:
+            total_age_span = 1  # Avoid division by zero
+        
+        scale = available_height / total_age_span
+        
+        # Draw title
+        painter.setPen(QPen(Qt.black, 1))
+        title_font = QFont()
+        title_font.setPointSize(14)
+        title_font.setBold(True)
+        painter.setFont(title_font)
+        painter.drawText(0, 30, "Stratigraphic Column")
+        
+        # Draw column backgrounds (empty spaces)
+        painter.setPen(QPen(Qt.black, 1))
+        painter.setBrush(QBrush(Qt.white))
+        
+        # Draw background for all columns
+        column_positions = []
+        if era_col_x is not None:
+            column_positions.append((era_col_x, era_col_width))
+        if period_col_x is not None:
+            column_positions.append((period_col_x, period_col_width))
+        if epoch_col_x is not None:
+            column_positions.append((epoch_col_x, epoch_col_width))
+        if age_col_x is not None:
+            column_positions.append((age_col_x, age_col_width))
+        column_positions.append((col_x, col_width))
+        column_positions.append((pattern_col_x, pattern_col_width))
+        
+        for col_x_pos, col_width_pos in column_positions:
+            painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
+
+        # Draw each layer consecutively, ignoring age gaps
+        current_y = start_y
+        
+        for layer in sorted_layers:
+            # Calculate layer height based on age span (old_age - young_age)
+            layer_age_span = layer.old_age - layer.young_age
+            layer_height = layer_age_span * scale
+            
+            # Ensure minimum height for visibility
+            if layer_height < 5:
+                layer_height = 5
+            
+            layer_top_y = current_y
+            
+            # Get layer data
+            layer_name = layer.name
+            layer_rock_type = layer.rock_type
+            layer_young_age = layer.young_age
+            layer_old_age = layer.old_age
+            layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
+            
+            # Draw era column for this layer
+            if era_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    era_col_x, layer_top_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
+            
+            # Draw period column for this layer
+            if period_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    period_col_x, layer_top_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
+                
+            # Draw epoch column for this layer
+            if epoch_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    epoch_col_x, layer_top_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
+                
+            # Draw age column for this layer
+            if age_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
+            
+            # Draw main layer rectangle
+            painter.setPen(QPen(Qt.black, 2))
+            painter.setBrush(QBrush(Qt.white))
+            painter.drawRect(col_x, layer_top_y, col_width, layer_height)
+            
+            # Draw layer label
+            painter.setPen(QPen(Qt.black, 1))
+            font = QFont()
+            font.setPointSize(10)
+            painter.setFont(font)
+            
+            text_rect = QRect(col_x + 5, layer_top_y + 5, col_width - 10, layer_height - 10)
+            
+            # Display age information instead of depth/thickness
+            age_span_text = f"{layer_young_age:.1f} - {layer_old_age:.1f} Ma"
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+                        f"{layer_name}\n{layer.rock_type_display_name}\n{age_span_text}")
+            
+            # Draw pattern column for this layer
+            self.draw_pattern_column(painter, layer, 
+                                pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
+            
+            # Draw the depositional environment for this layer
+            self.draw_depositional_environment_column(painter, layer, 
+                                                depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
+            
+            # Move to next position for the next layer
+            current_y += layer_height
+    
     def paintEvent(self, event):
         """Draw the stratigraphic column with era display and formation tops"""
         painter = QPainter(self)
@@ -159,212 +547,12 @@ class StratColumn(QWidget):
                 painter.drawText(self.rect().center(), "No layers added")
                 return
             
-            # Column dimensions
-            era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
-            period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
-            epoch_col_width = DEFAULT_COLUMN_SIZE # Width for epoch column
-            age_col_width = DEFAULT_COLUMN_SIZE # Width for age column
-            col_width = DEFAULT_COLUMN_SIZE      # Width for main column
-            pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
-            depositional_col_width = DEFAULT_COLUMN_SIZE / 4
-            
-            # Calculate x positions based on enabled options
-            current_x = 0
-
-            # Era column
-            if self.display_options['show_eras']:
-                era_col_x = current_x
-                current_x += era_col_width
+            if self.scaling_mode == ScalingMode.FORMATION_TOP_THICKNESS:
+                self.paint_scaling_mode_0(painter)
+            elif self.scaling_mode == ScalingMode.CHRONOLOGY:
+                self.paint_scaling_mode_1(painter)
             else:
-                era_col_x = None
-
-            # Period column
-            if self.display_options['show_periods']:
-                period_col_x = current_x
-                current_x += period_col_width
-            else:
-                period_col_x = None
-
-            # Epoch column
-            if self.display_options['show_epochs']:
-                epoch_col_x = current_x
-                current_x += epoch_col_width
-            else:
-                epoch_col_x = None
-
-            # Age column
-            if self.display_options['show_ages']:
-                age_col_x = current_x
-                current_x += age_col_width
-            else:
-                age_col_x = None
-
-            # Main column always comes after all geological time columns
-            col_x = current_x
-
-            # Pattern column comes after main column
-            pattern_col_x = col_x + col_width
-
-            # Depositional column comes after pattern column
-            depoitional_col_x = pattern_col_x + pattern_col_width
-
-            start_y = 50
-            available_height = self.height() - 150
-            
-            # Get depth range and calculate scaling
-            min_depth, max_depth = self.get_depth_range()
-            total_depth_range = max_depth - min_depth
-            
-            if total_depth_range <= 0:
-                total_depth_range = 1  # Avoid division by zero
-            
-            scale = available_height / total_depth_range
-            
-            # Draw title
-            painter.setPen(QPen(Qt.black, 1))
-            title_font = QFont()
-            title_font.setPointSize(14)
-            title_font.setBold(True)
-            painter.setFont(title_font)
-            painter.drawText(0, 30, "Stratigraphic Column")
-
-            # Sort layers by formation_top to ensure proper order
-            sorted_layers = sorted(self.layers, key=lambda l: l.formation_top)
-            
-            # Draw column backgrounds (empty spaces)
-            painter.setPen(QPen(Qt.black, 1))
-            painter.setBrush(QBrush(Qt.white))
-            
-            # Draw background for all columns
-            column_positions = []
-            if era_col_x is not None:
-                column_positions.append((era_col_x, era_col_width))
-            if period_col_x is not None:
-                column_positions.append((period_col_x, period_col_width))
-            if epoch_col_x is not None:
-                column_positions.append((epoch_col_x, epoch_col_width))
-            if age_col_x is not None:
-                column_positions.append((age_col_x, age_col_width))
-            column_positions.append((col_x, col_width))
-            column_positions.append((pattern_col_x, pattern_col_width))
-            
-            for col_x_pos, col_width_pos in column_positions:
-                painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
-
-            # Draw each layer at its correct position
-            for layer in sorted_layers:
-                # Calculate layer position based on formation_top
-                layer_top_y = start_y + ((layer.formation_top - min_depth) * scale)
-                layer_height = layer.thickness * scale
-                
-                # Get layer data
-                layer_name = layer.name
-                layer_thickness = layer.thickness
-                layer_rock_type = layer.rock_type
-                layer_formation_top = layer.formation_top
-                layer_young_age = layer.young_age
-                layer_old_age = layer.old_age
-                layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
-                
-                # Draw era column for this layer
-                if era_col_x is not None:
-                    self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        era_col_x, layer_top_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
-                
-                # Draw period column for this layer
-                if period_col_x is not None:
-                    self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        period_col_x, layer_top_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
-                    
-                # Draw epoch column for this layer
-                if epoch_col_x is not None:
-                    self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        epoch_col_x, layer_top_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
-                    
-                # Draw age column for this layer
-                if age_col_x is not None:
-                    self.draw_age_column(painter, layer, layer_strat_ages, 
-                                        age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
-                
-                # Draw main layer rectangle
-                painter.setPen(QPen(Qt.black, 2))
-                painter.setBrush(QBrush(Qt.white))
-                painter.drawRect(col_x, layer_top_y, col_width, layer_height)
-                
-                # Draw layer label
-                painter.setPen(QPen(Qt.black, 1))
-                font = QFont()
-                font.setPointSize(10)
-                painter.setFont(font)
-                
-                text_rect = QRect(col_x + 5, layer_top_y + 5, col_width - 10, layer_height - 10)
-                
-                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap | Qt.TextWrapAnywhere,
-                            f"{layer_name}\n{layer.rock_type_display_name}\n{layer_thickness}m\nTop: {layer_formation_top}m")
-                
-                # Draw pattern column for this layer
-                self.draw_pattern_column(painter, layer, 
-                                   pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
-                
-                # Draw the depositional environment for this layer
-                self.draw_depositional_environment_column(painter, layer, 
-                                                    depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
-            
-            # Draw depth scale (position it after the pattern column)
-            painter.setPen(QPen(Qt.black, 2))
-            scale_x = depoitional_col_x + depositional_col_width + 20
-            painter.drawLine(scale_x, start_y, scale_x, start_y + available_height)
-            
-            # Add scale markers based on actual depths
-            painter.setPen(QPen(Qt.black, 1))
-            font = QFont()
-            font.setPointSize(9)
-            painter.setFont(font)
-            
-            # Calculate appropriate scale intervals
-            depth_interval = max(1, int(total_depth_range / 10))  # Aim for about 10 markers
-            
-            # Round to nice numbers with larger increments
-            if depth_interval <= 1:
-                depth_interval = 1
-            elif depth_interval <= 2:
-                depth_interval = 2
-            elif depth_interval <= 5:
-                depth_interval = 5
-            elif depth_interval <= 10:
-                depth_interval = 10
-            elif depth_interval <= 20:
-                depth_interval = 20
-            elif depth_interval <= 25:
-                depth_interval = 25
-            elif depth_interval <= 50:
-                depth_interval = 50
-            elif depth_interval <= 100:
-                depth_interval = 100
-            elif depth_interval <= 200:
-                depth_interval = 200
-            elif depth_interval <= 250:
-                depth_interval = 250
-            elif depth_interval <= 500:
-                depth_interval = 500
-            else:
-                # For very large ranges, use increments of 1000, 2000, 5000, etc.
-                magnitude = 10 ** (len(str(int(depth_interval))) - 1)
-                if depth_interval <= 2 * magnitude:
-                    depth_interval = magnitude
-                elif depth_interval <= 5 * magnitude:
-                    depth_interval = 2 * magnitude
-                else:
-                    depth_interval = 5 * magnitude
-            
-            # Draw scale markers
-            current_depth = int(min_depth / depth_interval) * depth_interval
-            while current_depth <= max_depth:
-                if current_depth >= min_depth:
-                    y_pos = start_y + ((current_depth - min_depth) * scale)
-                    painter.drawLine(scale_x, y_pos, scale_x + 10, y_pos)
-                    painter.drawText(scale_x + 15, y_pos + 5, f"{current_depth:.0f}m")
-                current_depth += depth_interval
+                pass
                 
         finally:
             painter.end()
@@ -439,12 +627,12 @@ class StratColumn(QWidget):
                 painter.drawText(text_rect, Qt.AlignCenter, age_name)
                 
                 # Add age labels if space permits
-                if age_height > 30:
-                    font.setPointSize(8)
-                    painter.setFont(font)
-                    painter.setPen(QPen(Qt.black, 1))
-                    age_text = f"{overlap_young}-{overlap_old} Ma"
-                    painter.drawText(text_rect, Qt.AlignBottom | Qt.AlignCenter, age_text)
+                # if age_height > 30:
+                #     font.setPointSize(8)
+                #     painter.setFont(font)
+                #     painter.setPen(QPen(Qt.black, 1))
+                #     age_text = f"{overlap_young}-{overlap_old} Ma"
+                #     painter.drawText(text_rect, Qt.AlignBottom | Qt.AlignCenter, age_text)
     
     def draw_depositional_environment_column(self, painter, layer, x, y, width, height):
         layer_dep_env_name = layer.dep_env.display_name
@@ -453,6 +641,6 @@ class StratColumn(QWidget):
         painter.setPen(QPen(Qt.black, 1))
         painter.drawRect(x, y, width, height)
 
-        # text_rect = QRect(x + 5, y + 5, width - 16, height - 10)
-        # painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap | Qt.TextWrapAnywhere,
-        #                     f"{layer_dep_env_name.upper()}")
+        text_rect = QRect(x + 5, y + 5, width - 10, height - 10)
+        painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+                            f"{layer_dep_env_name.upper()}")

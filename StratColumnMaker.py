@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from functools import partial
+from app import ScalingMode
 
 DEFAULT_THICKNESS = 1000
 DEFAULT_YOUNG_AGE = 0.0
@@ -179,7 +180,24 @@ class StratColumnMaker(QMainWindow):
         checkbox_layout.addWidget(self.checkbox_ages)
 
         layout.addLayout(checkbox_layout)
+
+        # Scaling mode layout
+        # Plot by formation top, thickness, time
+        scaling_mode_layout = QHBoxLayout()
+        scaling_mode_layout.setSpacing(0)
+        scaling_mode_layout.addWidget(QLabel("Sort stratigraphic column by:"))
+        self.scaling_mode_combo_box = QComboBox()
+
+        for mode in ScalingMode:
+            self.scaling_mode_combo_box.addItem(str(mode.value))
+            self.scaling_mode_combo_box.setItemData(self.scaling_mode_combo_box.count() - 1, mode)
         
+        self.scaling_mode_combo_box.currentTextChanged.connect(self.on_scaling_mode_changed)
+        
+        scaling_mode_layout.addWidget(self.scaling_mode_combo_box)
+        layout.addLayout(scaling_mode_layout)
+
+
         # Add layer button
         add_button = QPushButton("Add Layer")
         add_button.clicked.connect(self.add_layer)
@@ -250,6 +268,12 @@ class StratColumnMaker(QMainWindow):
         """Called when any checkbox state changes"""
         options = self.get_display_options()
         self.display_options_changed.emit(options)
+
+    def on_scaling_mode_changed(self, value):
+        """Handle scaling mode change"""       
+        # Get the selected ScalingMode enum
+        current_mode = self.scaling_mode_combo_box.currentData()
+        self.strat_column.update_scaling_mode(current_mode)
 
     def update_layer_table(self):
         self.layer_table.setRowCount(len(self.strat_column.layers))

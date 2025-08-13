@@ -2,6 +2,11 @@ import sys
 import StratColumnMaker as scm
 
 from PySide6.QtWidgets import QApplication
+from enum import Enum
+
+class ScalingMode(Enum):
+    FORMATION_TOP_THICKNESS = "Formation top / thickness"
+    CHRONOLOGY = "Chronology"
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
