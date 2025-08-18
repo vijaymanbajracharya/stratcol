@@ -2,7 +2,6 @@ import json
 import sys
 import pdb
 import StratColumn as sc
-import Layer
 import os
 
 from Lithology import RockCategory, RockProperties, RockType
@@ -10,11 +9,12 @@ from Deposition import DepositionalEnvironment
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
                                QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
-                               QDoubleSpinBox, QCheckBox)
+                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog)
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QAction
 from functools import partial
 from app import ScalingMode
+from Layer import Layer
 
 DEFAULT_THICKNESS = 1000
 DEFAULT_YOUNG_AGE = 0.0
@@ -25,20 +25,26 @@ def populate_rock_type_combo(combo_box):
     """Populate QComboBox with rock types grouped by category"""
     combo_box.clear()
     
-    # Add items grouped by category
-    for category in RockCategory:
-        if category == RockCategory.OTHER:
-            continue
+    # # Add items grouped by category
+    # for category in RockCategory:
+    #     if category == RockCategory.OTHER:
+    #         continue
         
-        # Add rocks in this category
-        rocks = RockProperties.get_rocks_by_category(category)
-        for rock in sorted(rocks, key=lambda x: x.value):
-            display_name = RockProperties.get_display_name(rock)
-            combo_box.addItem(display_name)
-            combo_box.setItemData(combo_box.count() - 1, rock)
+    #     # Add rocks in this category
+    #     rocks = RockProperties.get_rocks_by_category(category)
+    #     for rock in sorted(rocks, key=lambda x: x.value):
+    #         display_name = RockProperties.get_display_name(rock)
+    #         combo_box.addItem(display_name)
+    #         combo_box.setItemData(combo_box.count() - 1, rock)
     
-    other_rocks = RockProperties.get_rocks_by_category(RockCategory.OTHER)
-    for rock in sorted(other_rocks, key=lambda x: x.value):
+    # other_rocks = RockProperties.get_rocks_by_category(RockCategory.OTHER)
+    # for rock in sorted(other_rocks, key=lambda x: x.value):
+    #     display_name = RockProperties.get_display_name(rock)
+    #     combo_box.addItem(display_name)
+    #     combo_box.setItemData(combo_box.count() - 1, rock)
+
+    rocks = RockProperties.get_rocks_by_alphabetic_order()
+    for rock in rocks:
         display_name = RockProperties.get_display_name(rock)
         combo_box.addItem(display_name)
         combo_box.setItemData(combo_box.count() - 1, rock)
@@ -47,8 +53,8 @@ def populate_dep_env_combo(combo_box):
     """Populate QComboBox with depositional environments"""
     combo_box.clear()
 
-    # Add items from json
-    for env in DepositionalEnvironment:
+    # Sort by display_name alphabetically
+    for env in sorted(DepositionalEnvironment, key=lambda e: e.display_name):
         combo_box.addItem(env.display_name)
         combo_box.setItemData(combo_box.count() - 1, env)
 
@@ -60,6 +66,9 @@ class StratColumnMaker(QMainWindow):
         self.setWindowTitle("Stratigraphic Column Maker")
         self.setGeometry(100, 100, 1200, 800)
         
+        # Create toolbar
+        self.create_toolbar()
+
         # Central widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -74,6 +83,200 @@ class StratColumnMaker(QMainWindow):
         # Stratigraphic column
         self.strat_column = sc.StratColumn()
         layout.addWidget(self.strat_column, 2)
+
+        # Activate toolbar
+        self.toolbar.setEnabled(True)
+        
+    
+    def create_toolbar(self):
+        """Create the main toolbar with dropdown menus"""
+        self.toolbar = QToolBar("Main Toolbar")
+        self.toolbar.setEnabled(False)
+        self.addToolBar(self.toolbar)
+
+        # File menu dropdown
+        file_button = QToolButton()
+        file_button.setText("File")
+        file_button.setPopupMode(QToolButton.InstantPopup)
+        
+        file_menu = QMenu(self)
+        
+        new_action = QAction("New Column", self)
+        new_action.setShortcut("Ctrl+N")
+        new_action.triggered.connect(self.new_column)
+        file_menu.addAction(new_action)
+        
+        open_action = QAction("Open...", self)
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_column)
+        file_menu.addAction(open_action)
+        
+        save_action = QAction("Save", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_column)
+        file_menu.addAction(save_action)
+        
+        save_as_action = QAction("Save As...", self)
+        save_as_action.setShortcut("Ctrl+Shift+S")
+        save_as_action.triggered.connect(self.save_as_column)
+        file_menu.addAction(save_as_action)
+        
+        file_menu.addSeparator()
+        
+        export_action = QAction("Export Image...", self)
+        export_action.triggered.connect(self.export_image)
+        file_menu.addAction(export_action)
+
+        file_button.setMenu(file_menu)
+        self.toolbar.addWidget(file_button)
+
+        # View
+        view_button = QToolButton()
+        view_button.setText("View")
+        view_button.setPopupMode(QToolButton.InstantPopup)
+        
+        view_menu = QMenu(self)
+
+        sort_action = QAction("Sort By", self)
+        sort_action.triggered.connect(self.sort_column)
+        view_menu.addAction(sort_action)
+        
+        show_action = QAction("Show Layers", self)
+        show_action.triggered.connect(self.show_column)
+        view_menu.addAction(show_action)
+        
+        view_button.setMenu(view_menu)
+        self.toolbar.addWidget(view_button)
+
+    def sort_column(self):
+        pass
+
+    def show_column(self):
+        pass
+    
+    def new_column(self):
+        for _ in range(0, len(self.strat_column.layers)):
+            self.strat_column.remove_layer(len(self.strat_column.layers) - 1)
+        
+        self.update_layer_table()
+
+    def open_column(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            None,
+            "Open Layers JSON File",
+            "",
+            "JSON Files (*.json);;All Files (*)"
+        )
+        
+        if not file_path:
+            return [], {}
+
+        with open(file_path, "r") as f:
+            data = json.load(f)
+
+        # Extract layers and metadata separately
+        layers_data = data.get("layers", [])
+        metadata = data.get("metadata", {})
+
+        # Convert each dict into a Layer
+        layers = [Layer.from_dict(layer_dict) for layer_dict in layers_data]
+        
+        for layer in layers:
+            self.strat_column.add_layer(layer)
+            self.update_layer_table()
+
+            self.name_input.clear()
+            self.thickness_input.setValue(DEFAULT_THICKNESS)
+            self.formation_top_input.setValue(self.strat_column.max_depth)
+            self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
+            self.old_age_input.setValue(DEFAULT_OLD_AGE)
+        
+
+    def save_column(self):
+        """Save the current column"""
+        # Implementation for file saving
+        pass
+
+    def save_as_column(self):
+        """Save the current column to a user-selected location"""
+        try:
+            # Get the save file path from user
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save Stratigraphic Column As...",
+                os.path.expanduser("~/strat_column.json"),  # Default filename in home directory
+                "JSON files (*.json);;All files (*.*)"
+            )
+            
+            # If user cancelled the dialog
+            if not file_path:
+                return
+            
+            # Ensure the file has a .json extension if none provided
+            if not file_path.lower().endswith('.json'):
+                file_path += '.json'
+            
+            # Collect all layer data
+            column_data = {
+                "layers": [],
+                "metadata": {
+                    "version": "1.0",
+                    "created_with": "Stratigraphic Column Maker",
+                    "total_layers": len(self.strat_column.layers)
+                }
+            }
+            
+            # Convert each layer to dictionary format
+            for layer in self.strat_column.layers:
+                layer_dict = layer.to_dict()
+                column_data["layers"].append(layer_dict)
+            
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            # Save to JSON file with proper formatting
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(column_data, f, indent=2, ensure_ascii=False)
+            
+            # Show success message
+            QMessageBox.information(
+                self, 
+                "Save Successful", 
+                f"Stratigraphic column saved successfully to:\n{os.path.abspath(file_path)}"
+            )
+            
+            # Optional: Store the current file path for future save operations
+            self.current_file_path = file_path
+            
+        except Exception as e:
+            # Handle any errors that occur during saving
+            QMessageBox.critical(
+                self, 
+                "Save Error", 
+                f"Failed to save stratigraphic column:\n{str(e)}"
+            )
+
+    def export_image(self):
+        """Export column as image"""
+        try:
+            pixmap = self.strat_column.grab()
+            os.makedirs("output", exist_ok=True)
+            file_path = os.path.join("output", "strat_column.png")  # Better path handling
+            
+            success = pixmap.save(file_path, "PNG")
+            
+            if success:
+                # Show success message with full path
+                abs_path = os.path.abspath(file_path)
+                QMessageBox.information(self, "Save Successful", 
+                                    f"Stratigraphic column saved to:\n{abs_path}")
+            else:
+                QMessageBox.warning(self, "Save Warning", 
+                                "File may not have been saved properly.")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", 
+                                f"Failed to save file:\n{str(e)}")
 
     def validate_start(self, start_value):
         end_value = self.old_age_input.value()
@@ -212,19 +415,6 @@ class StratColumnMaker(QMainWindow):
         self.layer_table.setHorizontalHeaderLabels(["Name", "Thickness", "Type", "Action"])
         layout.addWidget(self.layer_table)
         
-        # File operations
-        save_button = QPushButton("Save Column")
-        save_button.clicked.connect(self.save_column)
-        layout.addWidget(save_button)
-        
-        load_button = QPushButton("Load Column")
-        load_button.clicked.connect(self.load_column)
-        layout.addWidget(load_button)
-        
-        clear_button = QPushButton("Clear All")
-        clear_button.clicked.connect(self.clear_all)
-        layout.addWidget(clear_button)
-        
         return panel
     
     def add_layer(self):
@@ -244,7 +434,7 @@ class StratColumnMaker(QMainWindow):
         
         selected_dep_env = self.dep_env_combo.currentData()
 
-        layer = Layer.Layer(name, thickness, selected_rock, formation_top, young_age, old_age, selected_dep_env)
+        layer = Layer(name, thickness, selected_rock, formation_top, young_age, old_age, selected_dep_env)
         
         self.strat_column.add_layer(layer)
         self.update_layer_table()
@@ -292,16 +482,3 @@ class StratColumnMaker(QMainWindow):
         """Remove a layer from the column"""
         self.strat_column.remove_layer(index)
         self.update_layer_table()
-    
-    def save_column(self):
-        pixmap = self.strat_column.grab()
-    
-        # Save as PNG
-        os.makedirs("output", exist_ok=True)
-        pixmap.save("output\\strat_column.png", "PNG")
-    
-    def load_column(self):
-        pass
-    
-    def clear_all(self):
-        pass

@@ -24,6 +24,25 @@ class DepositionalEnvironment(Enum):
     def __repr__(self):
         return f"{self.display_name} ({self.color})"
 
+    def to_dict(self):
+        return {"name": self.name, "display_name": self.display_name, "color": self.color}
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> Optional['DepositionalEnvironment']:
+        """Recreate DepositionalEnvironment from dictionary"""
+        if not data:
+            return None
+        # Prefer lookup by .name (exact enum key)
+        if "name" in data:
+            return cls[data["name"]]
+        
+        # Fallback: lookup by display_name
+        if "display_name" in data:
+            for env in cls:
+                if env.display_name == data["display_name"]:
+                    return env
+        return None
+
 # Usage examples:
 if __name__ == "__main__":
     # Access the enum values

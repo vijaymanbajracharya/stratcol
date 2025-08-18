@@ -12,6 +12,9 @@ class Layer:
         self.young_age = young_age
         self.old_age = old_age
         self.dep_env = dep_env
+
+    def __repr__(self):
+        return str(self.to_dict())
     
     @property
     def category(self) -> RockCategory:
@@ -37,19 +40,21 @@ class Layer:
             'formation_top': self.formation_top,
             'young_age': self.young_age,
             'old_age': self.old_age,
-            'depositional_environment': self.dep_env
+            'dep_env': self.dep_env.to_dict() if self.dep_env else None
         }
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Layer':
         """Create layer from dictionary"""
         rock_type = RockType(data['rock_type'])
-        
+        dep_env = DepositionalEnvironment.from_dict(data.get("dep_env"))
+
         return cls(
             name=data['name'],
             thickness=data['thickness'],
             rock_type=rock_type,
-            formation_top=data['formation_top'],
-            young_age=data['young_age'],
-            old_age=data['old_age']
+            formation_top=data.get('formation_top'),
+            young_age=data.get('young_age'),
+            old_age=data.get('old_age'),
+            dep_env=dep_env
         )

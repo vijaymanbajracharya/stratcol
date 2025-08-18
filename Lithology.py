@@ -139,6 +139,11 @@ class RockProperties:
         return [rock for rock, cat in cls.CATEGORIES.items() if cat == category]
     
     @classmethod
+    def get_rocks_by_alphabetic_order(cls) -> List[RockType]:
+        """Get all rock types in alphabetical order"""
+        return sorted(list(RockType), key=lambda rock: cls.get_display_name(rock))
+    
+    @classmethod
     def get_display_name(cls, rock_type: RockType) -> str:
         """Get formatted display name for rock type"""
         return rock_type.value.replace('_', ' ').title()
