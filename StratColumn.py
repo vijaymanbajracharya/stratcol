@@ -260,15 +260,37 @@ class StratColumn(QWidget):
             column_positions.append((age_col_x, age_col_width))
         column_positions.append((col_x, col_width))
         column_positions.append((pattern_col_x, pattern_col_width))
+        column_positions.append((depoitional_col_x, depositional_col_width))
+        
+        # Calculate total height based on show_uncomformity setting
+        if self.show_uncomformity:
+            # Use actual depth range for scaling
+            total_display_height = available_height
+            scale = available_height / total_depth_range
+        else:
+            # Use cumulative thickness for scaling (no gaps)
+            total_thickness = sum(layer.thickness for layer in sorted_layers)
+            if total_thickness <= 0:
+                total_thickness = 1  # Avoid division by zero
+            scale = available_height / total_thickness
+            total_display_height = available_height
         
         for col_x_pos, col_width_pos in column_positions:
-            painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
+            painter.drawRect(col_x_pos, start_y, col_width_pos, total_display_height)
 
         # Draw each layer at its correct position
+        current_sequential_y = start_y  # For sequential positioning when show_uncomformity is False
+        
         for layer in sorted_layers:
-            # Calculate layer position based on formation_top
-            layer_top_y = start_y + ((layer.formation_top - min_depth) * scale)
-            layer_height = layer.thickness * scale
+            if self.show_uncomformity:
+                # Calculate layer position based on formation_top (with gaps for unconformities)
+                layer_top_y = start_y + ((layer.formation_top - min_depth) * scale)
+                layer_height = layer.thickness * scale
+            else:
+                # Position layers sequentially without gaps
+                layer_top_y = current_sequential_y
+                layer_height = layer.thickness * scale
+                current_sequential_y += layer_height
             
             # Get layer data
             layer_name = layer.name
@@ -326,58 +348,70 @@ class StratColumn(QWidget):
         # Draw depth scale (position it after the pattern column)
         painter.setPen(QPen(Qt.black, 2))
         scale_x = depoitional_col_x + depositional_col_width + 20
-        painter.drawLine(scale_x, start_y, scale_x, start_y + available_height)
+        painter.drawLine(scale_x, start_y, scale_x, start_y + total_display_height)
         
-        # Add scale markers based on actual depths
+        # Add scale markers showing actual formation depths for each layer
         painter.setPen(QPen(Qt.black, 1))
         font = QFont()
         font.setPointSize(9)
         painter.setFont(font)
         
-        # Calculate appropriate scale intervals
-        depth_interval = max(1, int(total_depth_range / 10))  # Aim for about 10 markers
+        # Draw depth markers for each layer individually
+        current_sequential_y_for_markers = start_y  # Track sequential position for markers
         
-        # Round to nice numbers with larger increments
-        if depth_interval <= 1:
-            depth_interval = 1
-        elif depth_interval <= 2:
-            depth_interval = 2
-        elif depth_interval <= 5:
-            depth_interval = 5
-        elif depth_interval <= 10:
-            depth_interval = 10
-        elif depth_interval <= 20:
-            depth_interval = 20
-        elif depth_interval <= 25:
-            depth_interval = 25
-        elif depth_interval <= 50:
-            depth_interval = 50
-        elif depth_interval <= 100:
-            depth_interval = 100
-        elif depth_interval <= 200:
-            depth_interval = 200
-        elif depth_interval <= 250:
-            depth_interval = 250
-        elif depth_interval <= 500:
-            depth_interval = 500
+        if self.show_uncomformity:
+            # When showing unconformities, use actual positions
+            for layer in sorted_layers:
+                layer_top_y_marker = start_y + ((layer.formation_top - min_depth) * scale)
+                layer_height_marker = layer.thickness * scale
+                layer_bottom_depth = layer.formation_top + layer.thickness
+                layer_bottom_y_marker = layer_top_y_marker + layer_height_marker
+                
+                # Draw marker at top of layer (formation_top)
+                painter.drawLine(scale_x, layer_top_y_marker, scale_x + 10, layer_top_y_marker)
+                painter.drawText(scale_x + 15, layer_top_y_marker + 5, f"{layer.formation_top:.0f}m")
+                
+                # Draw marker at bottom of layer (formation_top + thickness)
+                painter.drawLine(scale_x, layer_bottom_y_marker, scale_x + 10, layer_bottom_y_marker)
+                painter.drawText(scale_x + 15, layer_bottom_y_marker + 5, f"{layer_bottom_depth:.0f}m")
         else:
-            # For very large ranges, use increments of 1000, 2000, 5000, etc.
-            magnitude = 10 ** (len(str(int(depth_interval))) - 1)
-            if depth_interval <= 2 * magnitude:
-                depth_interval = magnitude
-            elif depth_interval <= 5 * magnitude:
-                depth_interval = 2 * magnitude
-            else:
-                depth_interval = 5 * magnitude
-        
-        # Draw scale markers
-        current_depth = int(min_depth / depth_interval) * depth_interval
-        while current_depth <= max_depth:
-            if current_depth >= min_depth:
-                y_pos = start_y + ((current_depth - min_depth) * scale)
-                painter.drawLine(scale_x, y_pos, scale_x + 10, y_pos)
-                painter.drawText(scale_x + 15, y_pos + 5, f"{current_depth:.0f}m")
-            current_depth += depth_interval
+            # When not showing unconformities, position markers at sequential positions
+            # but ensure no overlap by using minimum spacing
+            min_text_spacing = 15  # Minimum pixels between text labels
+            last_text_y = start_y - min_text_spacing  # Track last text position
+            
+            for layer in sorted_layers:
+                layer_height_marker = layer.thickness * scale
+                layer_bottom_depth = layer.formation_top + layer.thickness
+                
+                # Draw marker at top of layer
+                painter.drawLine(scale_x, current_sequential_y_for_markers, scale_x + 10, current_sequential_y_for_markers)
+                
+                # Position text to avoid overlap
+                desired_text_y = current_sequential_y_for_markers + 5
+                if desired_text_y < last_text_y + min_text_spacing:
+                    text_y = last_text_y + min_text_spacing
+                else:
+                    text_y = desired_text_y
+                
+                painter.drawText(scale_x + 15, text_y, f"{layer.formation_top:.0f}m")
+                last_text_y = text_y
+                
+                # Move to bottom of current layer
+                current_sequential_y_for_markers += layer_height_marker
+                
+                # Draw marker at bottom of layer
+                painter.drawLine(scale_x, current_sequential_y_for_markers, scale_x + 10, current_sequential_y_for_markers)
+                
+                # Position bottom text to avoid overlap
+                desired_text_y = current_sequential_y_for_markers + 5
+                if desired_text_y < last_text_y + min_text_spacing:
+                    text_y = last_text_y + min_text_spacing
+                else:
+                    text_y = desired_text_y
+                
+                painter.drawText(scale_x + 15, text_y, f"{layer_bottom_depth:.0f}m")
+                last_text_y = text_y
 
     def paint_scaling_mode_1(self, painter):
         # Column dimensions

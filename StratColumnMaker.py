@@ -586,6 +586,12 @@ class StratColumnMaker(QMainWindow):
         """Handle scaling mode change"""       
         # Get the selected ScalingMode enum
         current_mode = self.scaling_mode_combo_box.currentData()
+        
+        if current_mode == ScalingMode.CHRONOLOGY:
+            self.checkbox_uncomformity.setEnabled(False)
+        else:
+            self.checkbox_uncomformity.setEnabled(True)
+        
         self.strat_column.update_scaling_mode(current_mode)
 
     def update_layer_table(self):
