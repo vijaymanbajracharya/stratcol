@@ -60,6 +60,7 @@ def populate_dep_env_combo(combo_box):
 
 class StratColumnMaker(QMainWindow):
     display_options_changed = Signal(dict)
+    show_uncomformity_changed = Signal(bool)
 
     def __init__(self):
         super().__init__()
@@ -132,6 +133,7 @@ class StratColumnMaker(QMainWindow):
 
         # View
         view_button = QToolButton()
+        view_button.setEnabled(False)
         view_button.setText("View")
         view_button.setPopupMode(QToolButton.InstantPopup)
         
@@ -148,6 +150,17 @@ class StratColumnMaker(QMainWindow):
         view_button.setMenu(view_menu)
         self.toolbar.addWidget(view_button)
 
+        # Help
+        help_button = QToolButton()
+        help_button.setEnabled(False)
+        help_button.setText("Help")
+        help_button.setPopupMode(QToolButton.InstantPopup)
+        
+        help_menu = QMenu(self)
+        
+        help_button.setMenu(help_menu)
+        self.toolbar.addWidget(help_button)
+
     def sort_column(self):
         pass
 
@@ -161,41 +174,119 @@ class StratColumnMaker(QMainWindow):
         self.update_layer_table()
 
     def open_column(self):
+        """Open a column file, clearing current layers and updating file path"""
         file_path, _ = QFileDialog.getOpenFileName(
-            None,
-            "Open Layers JSON File",
+            self,
+            "Open Stratigraphic Column",
             "",
             "JSON Files (*.json);;All Files (*)"
         )
         
         if not file_path:
-            return [], {}
-
-        with open(file_path, "r") as f:
-            data = json.load(f)
-
-        # Extract layers and metadata separately
-        layers_data = data.get("layers", [])
-        metadata = data.get("metadata", {})
-
-        # Convert each dict into a Layer
-        layers = [Layer.from_dict(layer_dict) for layer_dict in layers_data]
+            return  # User cancelled the dialog
         
-        for layer in layers:
-            self.strat_column.add_layer(layer)
+        try:
+            # Load the file data
+            with open(file_path, "r", encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Extract layers and metadata separately
+            layers_data = data.get("layers", [])
+            metadata = data.get("metadata", {})
+
+            # Clear all current layers before adding new ones
+            for _ in range(len(self.strat_column.layers)):
+                self.strat_column.remove_layer(len(self.strat_column.layers) - 1)
+
+            # Convert each dict into a Layer and add to column
+            layers = [Layer.from_dict(layer_dict) for layer_dict in layers_data]
+            
+            for layer in layers:
+                self.strat_column.add_layer(layer)
+
+            # Update the layer table display
             self.update_layer_table()
 
+            # Update the current file path to the opened file
+            self.current_file_path = file_path
+
+            # Reset input fields to defaults
             self.name_input.clear()
             self.thickness_input.setValue(DEFAULT_THICKNESS)
             self.formation_top_input.setValue(self.strat_column.max_depth)
             self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
             self.old_age_input.setValue(DEFAULT_OLD_AGE)
+            
+            # Show success message
+            QMessageBox.information(
+                self,
+                "Open Successful",
+                f"Stratigraphic column loaded from:\n{os.path.abspath(file_path)}\n\nLoaded {len(layers)} layers."
+            )
+            
+        except FileNotFoundError:
+            QMessageBox.critical(
+                self,
+                "Open Error",
+                f"File not found:\n{file_path}"
+            )
+        except json.JSONDecodeError as e:
+            QMessageBox.critical(
+                self,
+                "Open Error",
+                f"Invalid JSON file format:\n{str(e)}"
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Open Error",
+                f"Failed to open stratigraphic column:\n{str(e)}"
+            )
         
 
     def save_column(self):
-        """Save the current column"""
-        # Implementation for file saving
-        pass
+        """Save the current column - uses Save As if no file exists, otherwise overwrites"""
+        # Check if we have a previously saved file path
+        if not hasattr(self, 'current_file_path') or not self.current_file_path:
+            # No previous save location, so call Save As
+            self.save_as_column()
+            return
+        
+        try:
+            # We have a previous save location, so overwrite it
+            # Collect all layer data
+            column_data = {
+                "layers": [],
+                "metadata": {
+                    "version": "1.0",
+                    "created_with": "Stratigraphic Column Maker",
+                    "total_layers": len(self.strat_column.layers)
+                }
+            }
+            
+            # Convert each layer to dictionary format
+            for layer in self.strat_column.layers:
+                layer_dict = layer.to_dict()
+                column_data["layers"].append(layer_dict)
+            
+            # Save to the existing file path
+            with open(self.current_file_path, 'w', encoding='utf-8') as f:
+                json.dump(column_data, f, indent=2, ensure_ascii=False)
+            
+            # Show success message
+            QMessageBox.information(
+                self, 
+                "Save Successful", 
+                f"Stratigraphic column saved to:\n{os.path.abspath(self.current_file_path)}"
+            )
+            
+        except Exception as e:
+            # Handle any errors that occur during saving
+            QMessageBox.critical(
+                self, 
+                "Save Error", 
+                f"Failed to save stratigraphic column:\n{str(e)}"
+            )
 
     def save_as_column(self):
         """Save the current column to a user-selected location"""
@@ -257,12 +348,28 @@ class StratColumnMaker(QMainWindow):
             )
 
     def export_image(self):
-        """Export column as image"""
+        """Export column as image using file dialog"""
         try:
+            # Create the pixmap from the widget
             pixmap = self.strat_column.grab()
-            os.makedirs("output", exist_ok=True)
-            file_path = os.path.join("output", "strat_column.png")  # Better path handling
             
+            # Open file dialog to choose save location
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save Stratigraphic Column",
+                "strat_column.png",  # Default filename
+                "PNG files (*.png);;All files (*.*)"
+            )
+            
+            # Check if user canceled the dialog
+            if not file_path:
+                return
+            
+            # Ensure the file has .png extension
+            if not file_path.lower().endswith('.png'):
+                file_path += '.png'
+            
+            # Save the pixmap
             success = pixmap.save(file_path, "PNG")
             
             if success:
@@ -372,10 +479,10 @@ class StratColumnMaker(QMainWindow):
         self.checkbox_ages.setChecked(True)
 
         # Connect to update method that will trigger repaints
-        self.checkbox_eras.stateChanged.connect(self.on_checkbox_changed)
-        self.checkbox_periods.stateChanged.connect(self.on_checkbox_changed)
-        self.checkbox_epochs.stateChanged.connect(self.on_checkbox_changed)
-        self.checkbox_ages.stateChanged.connect(self.on_checkbox_changed)
+        self.checkbox_eras.stateChanged.connect(self.on_chrono_checkbox_changed)
+        self.checkbox_periods.stateChanged.connect(self.on_chrono_checkbox_changed)
+        self.checkbox_epochs.stateChanged.connect(self.on_chrono_checkbox_changed)
+        self.checkbox_ages.stateChanged.connect(self.on_chrono_checkbox_changed)
         
         checkbox_layout.addWidget(self.checkbox_eras)
         checkbox_layout.addWidget(self.checkbox_periods)
@@ -400,6 +507,18 @@ class StratColumnMaker(QMainWindow):
         scaling_mode_layout.addWidget(self.scaling_mode_combo_box)
         layout.addLayout(scaling_mode_layout)
 
+        # Uncomformity mode
+        uncomformity_layout = QHBoxLayout()
+        uncomformity_label = QLabel("Show uncomformity")
+        self.checkbox_uncomformity = QCheckBox()
+        self.checkbox_uncomformity.setChecked(True)
+        self.checkbox_uncomformity.stateChanged.connect(self.on_uncomformity_checkbox_changed)
+
+        uncomformity_layout.addWidget(uncomformity_label)
+        uncomformity_layout.addWidget(self.checkbox_uncomformity)
+        uncomformity_layout.addStretch()  # Pushes content to the left
+
+        layout.addLayout(uncomformity_layout)
 
         # Add layer button
         add_button = QPushButton("Add Layer")
@@ -445,7 +564,7 @@ class StratColumnMaker(QMainWindow):
         self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
         self.old_age_input.setValue(DEFAULT_OLD_AGE)
 
-    def get_display_options(self):
+    def get_chrono_display_options(self):
         """Return the current state of all checkboxes as a dictionary"""
         return {
             'show_eras': self.checkbox_eras.isChecked(),
@@ -454,10 +573,14 @@ class StratColumnMaker(QMainWindow):
             'show_ages': self.checkbox_ages.isChecked()
         }
     
-    def on_checkbox_changed(self):
-        """Called when any checkbox state changes"""
-        options = self.get_display_options()
+    def on_chrono_checkbox_changed(self):
+        """Called when chrono checkbox state changes"""
+        options = self.get_chrono_display_options()
         self.display_options_changed.emit(options)
+
+    def on_uncomformity_checkbox_changed(self):
+        """Called when uncomformity checkbox state chages"""
+        self.show_uncomformity_changed.emit(self.checkbox_uncomformity.isChecked())
 
     def on_scaling_mode_changed(self, value):
         """Handle scaling mode change"""       

@@ -36,6 +36,7 @@ class StratColumn(QWidget):
             'show_ages': True
         }
         self.scaling_mode = ScalingMode.FORMATION_TOP_THICKNESS
+        self.show_uncomformity = True
     
     def update_scaling_mode(self, scaling_mode):
         '''Change scaling mode'''
@@ -45,6 +46,10 @@ class StratColumn(QWidget):
     def update_display_options(self, options):
         """Slot to receive display option updates"""
         self.display_options = options
+        self.update()
+    
+    def update_uncomformity(self, show_uncomformity):
+        self.show_uncomformity = show_uncomformity
         self.update()
 
     def check_layer_overlap(self, new_layer):
@@ -616,7 +621,7 @@ class StratColumn(QWidget):
             painter.drawRect(QRectF(x, age_y, width, age_height))
             
             # Draw age label if there's enough space
-            if age_height > 15:
+            if age_height > 15 and age_height <= 45:
                 font = QFont()
                 font.setPointSize(9)
                 painter.setFont(font)
@@ -625,14 +630,35 @@ class StratColumn(QWidget):
                 # Center the text in the age rectangle
                 text_rect = QRectF(x + 5, age_y + 2, width - 10, age_height - 4)
                 painter.drawText(text_rect, Qt.AlignCenter, age_name)
+            elif age_height > 45:
+                font = QFont()
+                
+                # Center the text in the age rectangle
+                third_height = age_height / 3
+                top_rect = QRectF(x + 5, age_y + 2, width - 10, third_height)
+                middle_rect = QRectF(x + 5, age_y + third_height, width - 10, third_height)
+                bottom_rect = QRectF(x + 5, age_y + 2*third_height, width - 10, third_height)
+
+                # Add age labels if space permits
+                font.setPointSize(8)
+                painter.setFont(font)
+                painter.setPen(QPen(Qt.black, 1))
+                age_text = f"{overlap_young} Ma"
+                painter.drawText(top_rect, Qt.AlignCenter, age_text)
+
+                font.setPointSize(9)
+                painter.setFont(font)
+                painter.setPen(QPen(Qt.black, 1))
+                painter.drawText(middle_rect, Qt.AlignCenter, age_name)
                 
                 # Add age labels if space permits
-                # if age_height > 30:
-                #     font.setPointSize(8)
-                #     painter.setFont(font)
-                #     painter.setPen(QPen(Qt.black, 1))
-                #     age_text = f"{overlap_young}-{overlap_old} Ma"
-                #     painter.drawText(text_rect, Qt.AlignBottom | Qt.AlignCenter, age_text)
+                font.setPointSize(8)
+                painter.setFont(font)
+                painter.setPen(QPen(Qt.black, 1))
+                age_text = f"{overlap_old} Ma"
+                painter.drawText(bottom_rect, Qt.AlignCenter, age_text)
+            else:
+                pass
     
     def draw_depositional_environment_column(self, painter, layer, x, y, width, height):
         layer_dep_env_name = layer.dep_env.display_name

@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     # Connect class level signals
     window.display_options_changed.connect(window.strat_column.update_display_options)
+    window.show_uncomformity_changed.connect(window.strat_column.update_uncomformity)
 
     # Display
     window.show()
