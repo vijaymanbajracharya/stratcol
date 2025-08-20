@@ -7,3 +7,5 @@ output
 dist
 build
 app.spec
+stratcol.spec
+version_info.txt

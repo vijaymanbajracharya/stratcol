@@ -66,6 +66,7 @@ class StratColumnMaker(QMainWindow):
         super().__init__()
         self.setWindowTitle("Stratigraphic Column Maker")
         self.setGeometry(100, 100, 1200, 800)
+        self.showMaximized()
         
         # Create toolbar
         self.create_toolbar()
@@ -348,10 +349,24 @@ class StratColumnMaker(QMainWindow):
             )
 
     def export_image(self):
-        """Export column as image using file dialog"""
+        """Export column as image using file dialog with increased resolution"""
         try:
-            # Create the pixmap from the widget
+            # Define scale factor for higher resolution (2x, 3x, 4x, etc.)
+            scale_factor = 3  # Adjust this value as needed
+            
+            # Get the original widget size
+            original_size = self.strat_column.size()
+            
+            # Create the pixmap at higher resolution
             pixmap = self.strat_column.grab()
+            
+            # Scale up the pixmap for higher resolution
+            high_res_pixmap = pixmap.scaled(
+                original_size.width() * scale_factor,
+                original_size.height() * scale_factor,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation  # Use smooth transformation for better quality
+            )
             
             # Open file dialog to choose save location
             file_path, _ = QFileDialog.getSaveFileName(
@@ -369,14 +384,16 @@ class StratColumnMaker(QMainWindow):
             if not file_path.lower().endswith('.png'):
                 file_path += '.png'
             
-            # Save the pixmap
-            success = pixmap.save(file_path, "PNG")
+            # Save the high-resolution pixmap
+            success = high_res_pixmap.save(file_path, "PNG")
             
             if success:
-                # Show success message with full path
+                # Show success message with full path and resolution info
                 abs_path = os.path.abspath(file_path)
+                final_size = high_res_pixmap.size()
                 QMessageBox.information(self, "Save Successful", 
-                                    f"Stratigraphic column saved to:\n{abs_path}")
+                                    f"High-resolution stratigraphic column saved to:\n{abs_path}\n\n"
+                                    )
             else:
                 QMessageBox.warning(self, "Save Warning", 
                                 "File may not have been saved properly.")
