@@ -4,3 +4,6 @@ venv
 USGS_pattern_pages
 USGS_Swatches
 output
+dist
+build
+app.spec

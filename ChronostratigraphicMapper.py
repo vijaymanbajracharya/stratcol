@@ -1,6 +1,8 @@
 import json
 import os
+import sys
 from typing import Dict, List, Tuple, Optional
+from utils import get_resource_path
 
 class ChronostratigraphicMapper:
     """
@@ -33,15 +35,29 @@ class ChronostratigraphicMapper:
             self.epochs = self._load_json_file("epochs.json")
             self.ages = self._load_json_file("ages.json")
             self.metadata = self._load_json_file("metadata.json")
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             # If files don't exist, use built-in data and create files
-            print(f"Data files not found in '{self.data_directory}'.")
+            print(f"Data files not found in '{self.data_directory}': {e}")
+        except Exception as e:
+            print(f"Error loading data files: {e}")
     
     def _load_json_file(self, filename: str) -> List[Dict]:
-        """Load data from a JSON file."""
-        filepath = os.path.join(self.data_directory, filename)
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        """Load data from a JSON file using resource path."""
+        # Use the resource path helper to get the correct path
+        filepath = get_resource_path(os.path.join(self.data_directory, filename))
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print(f"File not found: {filepath}")
+            return []
+        except json.JSONDecodeError as e:
+            print(f"Invalid JSON in {filepath}: {e}")
+            return []
+        except Exception as e:
+            print(f"Error loading {filepath}: {e}")
+            return []
     
     def map_age_to_chronostratigraphy(self, min_age_ma: float, max_age_ma: float) -> Dict[str, List[str]]:
         """

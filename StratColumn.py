@@ -2,6 +2,7 @@ import Layer
 import pdb
 import os
 import re
+import sys
 
 from PySide6.QtWidgets import QWidget, QMessageBox
 from PySide6.QtGui import QPainter, QColor, QPen, QFont, QBrush, QPixmap
@@ -11,6 +12,7 @@ from Lithology import RockCategory, RockProperties, RockType
 from app import ScalingMode
 
 from enum import Enum
+from utils import get_resource_path
 
 DEFAULT_COLUMN_SIZE = 100
 
@@ -107,7 +109,9 @@ class StratColumn(QWidget):
     def load_texture(self, scale_factor=1.0, crop_pixels=5):
         """Load and cache the texture brush with scaling and cropping"""
         self.texture_brushes = {}  # Dictionary to store all textures
-        patterns_dir = "assets/patterns"
+        
+        # Use the resource path helper function
+        patterns_dir = get_resource_path("assets/patterns")
         
         # Check if directory exists
         if not os.path.exists(patterns_dir):
@@ -149,7 +153,6 @@ class StratColumn(QWidget):
                         print(f"Loaded texture_{texture_number}.png")
                     else:
                         print(f"Failed to load {filename}")
-
     def get_depth_range(self):
         """Calculate the total depth range needed for display"""
         if not self.layers:
