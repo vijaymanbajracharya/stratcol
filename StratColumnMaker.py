@@ -547,8 +547,8 @@ class StratColumnMaker(QMainWindow):
         # Layer list
         layout.addWidget(QLabel("Current Layers:"))
         self.layer_table = QTableWidget()
-        self.layer_table.setColumnCount(4)
-        self.layer_table.setHorizontalHeaderLabels(["Name", "Thickness", "Type", "Action"])
+        self.layer_table.setColumnCount(5)
+        self.layer_table.setHorizontalHeaderLabels(["Name", "Thickness", "Type", "Visibility", "Action"])
         layout.addWidget(self.layer_table)
         
         return panel
@@ -618,13 +618,36 @@ class StratColumnMaker(QMainWindow):
             self.layer_table.setItem(i, 0, QTableWidgetItem(layer.name))
             self.layer_table.setItem(i, 1, QTableWidgetItem(f"{layer.thickness}m"))
             self.layer_table.setItem(i, 2, QTableWidgetItem(layer.rock_type_display_name))
+
+            # Visibility checkbox - centered in cell
+            visibility_checkbox = QCheckBox()
+
+            if layer.visible:
+                visibility_checkbox.setChecked(True)
+            
+            visibility_checkbox.clicked.connect(partial(self.toggle_visibility_layer, i))
+
+            # Create a widget to hold the checkbox and center it
+            visibility_checkbox_widget = QWidget()
+            visibility_checkbox_layout = QHBoxLayout(visibility_checkbox_widget)
+            visibility_checkbox_layout.addWidget(visibility_checkbox)
+            visibility_checkbox_layout.setAlignment(Qt.AlignCenter)
+            visibility_checkbox_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins for tighter fit
+
+            self.layer_table.setCellWidget(i, 3, visibility_checkbox_widget)
             
             # Remove button
             remove_btn = QPushButton("Remove")
             remove_btn.clicked.connect(partial(self.remove_layer, i))
-            self.layer_table.setCellWidget(i, 3, remove_btn)
+            self.layer_table.setCellWidget(i, 4, remove_btn)
+
+            
     
     def remove_layer(self, index):
         """Remove a layer from the column"""
         self.strat_column.remove_layer(index)
         self.update_layer_table()
+
+    def toggle_visibility_layer(self, index):
+        """Toggle layer visibility"""
+        self.strat_column.toggle_visibility_layer(index)

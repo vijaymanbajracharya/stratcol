@@ -4,6 +4,7 @@ from typing import List, Dict, Optional
 from enum import Enum
 
 class DepositionalEnvironment(Enum):
+    BASEMENT = ("Basement", "#8B0000")
     CONTINENTAL = ("Continental", "#CC6600")
     HIGHLAND = ("Highland", "#E49EDD")
     EOLIAN = ("Eolian", "#FBE2D5")

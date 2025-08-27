@@ -90,7 +90,7 @@ class StratColumn(QWidget):
         # Sort layers by formation_top (shallowest first)
         self.layers.sort(key=lambda l: l.formation_top)
 
-        _, max_depth = self.get_depth_range()
+        _, max_depth = self.get_depth_range(self.layers)
         self.max_depth = max_depth
 
         # Trigger paint event
@@ -102,6 +102,11 @@ class StratColumn(QWidget):
             del self.layers[index]
             self.update()
     
+    def toggle_visibility_layer(self, index):
+        if 0 <= index < len(self.layers):
+            self.layers[index].toggle_visibility()
+            self.update() 
+
     def get_texture_brush(self, texture_id):
         """Get a specific texture brush by ID"""
         return self.texture_brushes.get(texture_id, None)
@@ -153,28 +158,35 @@ class StratColumn(QWidget):
                         print(f"Loaded texture_{texture_number}.png")
                     else:
                         print(f"Failed to load {filename}")
-    def get_depth_range(self):
+    def get_depth_range(self, visible_layers):
         """Calculate the total depth range needed for display"""
         if not self.layers:
             raise Exception("Attempted to find depth when no layers exist")
         
-        min_depth = min(layer.formation_top for layer in self.layers)
-        max_depth = max(layer.formation_top + layer.thickness for layer in self.layers)
+        min_depth = min(layer.formation_top for layer in visible_layers)
+        max_depth = max(layer.formation_top + layer.thickness for layer in visible_layers)
         
         return min_depth, max_depth
     
-    def get_age_range(self):
+    def get_age_range(self, visible_layers):
         """Calculate the total age range needed for display"""
         if not self.layers:
             raise Exception("Attempted to find age when no layers exist")
         
         all_ages = []
-        for layer in self.layers:
+        for layer in visible_layers:
             all_ages.extend([layer.young_age, layer.old_age])
         
         return min(all_ages), max(all_ages)
     
     def paint_scaling_mode_0(self, painter):
+        # Filter for only visible layers at the very beginning
+        visible_layers = [layer for layer in self.layers if layer.visible]
+        
+        # If no visible layers, don't render anything
+        if not visible_layers:
+            return
+    
         # Column dimensions
         era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
         period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
@@ -228,7 +240,7 @@ class StratColumn(QWidget):
         available_height = self.height() - 150
         
         # Get depth range and calculate scaling
-        min_depth, max_depth = self.get_depth_range()
+        min_depth, max_depth = self.get_depth_range(visible_layers)
         total_depth_range = max_depth - min_depth
         
         if total_depth_range <= 0:
@@ -245,7 +257,7 @@ class StratColumn(QWidget):
         painter.drawText(0, 30, "Stratigraphic Column")
 
         # Sort layers by formation_top to ensure proper order
-        sorted_layers = sorted(self.layers, key=lambda l: l.formation_top)
+        sorted_layers = sorted(visible_layers, key=lambda l: l.formation_top)
         
         # Draw column backgrounds (empty spaces)
         painter.setPen(QPen(Qt.black, 1))
@@ -417,6 +429,13 @@ class StratColumn(QWidget):
                 last_text_y = text_y
 
     def paint_scaling_mode_1(self, painter):
+        # Filter for only visible layers at the very beginning
+        visible_layers = [layer for layer in self.layers if layer.visible]
+        
+        # If no visible layers, don't render anything
+        if not visible_layers:
+            return
+        
         # Column dimensions
         era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
         period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
@@ -470,7 +489,7 @@ class StratColumn(QWidget):
         available_height = self.height() - 150
         
         # Sort layers by age - youngest (lowest age value) at top, oldest at bottom
-        sorted_layers = sorted(self.layers, key=lambda l: l.young_age)
+        sorted_layers = sorted(visible_layers, key=lambda l: l.young_age)
         
         # Calculate total age span across all layers (ignoring gaps)
         total_age_span = sum(layer.old_age - layer.young_age for layer in sorted_layers)
