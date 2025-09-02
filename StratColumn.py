@@ -3,9 +3,10 @@ import pdb
 import os
 import re
 import sys
+import math
 
 from PySide6.QtWidgets import QWidget, QMessageBox
-from PySide6.QtGui import QPainter, QColor, QPen, QFont, QBrush, QPixmap
+from PySide6.QtGui import QPainter, QColor, QPen, QFont, QBrush, QPixmap, QPainterPath
 from PySide6.QtCore import Qt, QRectF, QRect
 from ChronostratigraphicMapper import ChronostratigraphicMapper as chronomap
 from Lithology import RockCategory, RockProperties, RockType
@@ -538,6 +539,7 @@ class StratColumn(QWidget):
             column_positions.append((age_col_x, age_col_width))
         column_positions.append((col_x, col_width))
         column_positions.append((pattern_col_x, pattern_col_width))
+        column_positions.append((depoitional_col_x, depositional_col_width))
         
         for col_x_pos, col_width_pos in column_positions:
             painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
@@ -545,7 +547,7 @@ class StratColumn(QWidget):
         # Draw each layer consecutively, ignoring age gaps
         current_y = start_y
         
-        for layer in sorted_layers:
+        for i, layer in enumerate(sorted_layers):
             # Calculate layer height based on age span (old_age - young_age)
             layer_age_span = layer.old_age - layer.young_age
             layer_height = layer_age_span * scale
@@ -561,6 +563,8 @@ class StratColumn(QWidget):
             layer_rock_type = layer.rock_type
             layer_young_age = layer.young_age
             layer_old_age = layer.old_age
+            layer_min_thickness = layer.min_thickness
+            layer_max_thickness = layer.max_thickness
             layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
             
             # Draw era column for this layer
@@ -598,8 +602,14 @@ class StratColumn(QWidget):
             
             # Display age information instead of depth/thickness
             age_span_text = f"{layer_young_age:.1f} - {layer_old_age:.1f} Ma"
+
+            if layer_min_thickness is not None and layer_max_thickness is not None:
+                thickness_span_text = f"{layer_min_thickness}m - {layer_max_thickness}m"
+            else:
+                thickness_span_text = ""
+                
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
-                        f"{layer_name}\n{layer.rock_type_display_name}\n{age_span_text}")
+                        f"{layer_name}\n{layer.rock_type_display_name}\n{age_span_text}\n{thickness_span_text}")
             
             # Draw pattern column for this layer
             self.draw_pattern_column(painter, layer, 
@@ -611,6 +621,72 @@ class StratColumn(QWidget):
             
             # Move to next position for the next layer
             current_y += layer_height
+            
+            # Check for age gap with the previous layer and draw wavy boundary if needed
+            if i > 0:
+                previous_layer = sorted_layers[i - 1]
+                age_gap = layer.young_age - previous_layer.old_age
+                
+                # Define threshold for what constitutes a significant gap (e.g., 1 Ma)
+                gap_threshold = 1.0  # Million years - adjust as needed
+                
+                if age_gap > gap_threshold:
+                    # Draw wavy boundary at the top of current layer (before drawing the layer)
+                    self.draw_wavy_boundary(painter, layer_top_y, column_positions, age_gap)
+
+    def draw_wavy_boundary(self, painter, y_position, column_positions, age_gap):
+        """
+        Draw a wavy line across all columns to indicate an unconformity (age gap).
+        
+        Args:
+            painter: QPainter object
+            y_position: Y coordinate where to draw the boundary
+            column_positions: List of tuples (x_position, width) for all columns
+            age_gap: Size of the age gap in million years
+        """
+        
+        # Save current painter state
+        painter.save()
+        
+        # Set pen for wavy line - make it distinctive, and disable brush
+        painter.setPen(QPen(Qt.black, 1))
+        painter.setBrush(Qt.NoBrush)  # This prevents any fill
+        
+        # Calculate total width across all columns
+        if not column_positions:
+            painter.restore()
+            return
+        
+        leftmost_x = min(pos[0] for pos in column_positions)
+        rightmost_x = max(pos[0] + pos[1] for pos in column_positions)
+        total_width = rightmost_x - leftmost_x
+        
+        # Wave parameters
+        wave_amplitude = 4  # Height of the waves
+        wave_frequency = 0.05  # How many waves per pixel (adjust for wave density)
+        
+        # Create the wavy path
+        path = QPainterPath()
+        
+        # Start the path
+        start_x = leftmost_x
+        start_y = y_position
+        path.moveTo(start_x, start_y)
+        
+        # Create wavy line by adding small line segments
+        num_points = int(total_width / 2)  # One point every 2 pixels
+        for i in range(1, num_points + 1):
+            x = start_x + (i * total_width / num_points)
+            # Create sine wave
+            wave_offset = wave_amplitude * math.sin(2 * math.pi * wave_frequency * (x - start_x))
+            y = start_y + wave_offset
+            path.lineTo(x, y)
+        
+        # Draw the wavy path (stroke only, no fill)
+        painter.strokePath(path, painter.pen())
+        
+        # Restore painter state
+        painter.restore()
     
     def paintEvent(self, event):
         """Draw the stratigraphic column with era display and formation tops"""

@@ -4,7 +4,8 @@ from typing import Optional
 
 class Layer:
     def __init__(self, name: str, thickness: float, rock_type: RockType, formation_top: Optional[int] = None, 
-                 young_age: Optional[float] = None, old_age: Optional[float] = None, dep_env: Optional[DepositionalEnvironment] = None, visible: Optional[bool] = True):
+                 young_age: Optional[float] = None, old_age: Optional[float] = None, dep_env: Optional[DepositionalEnvironment] = None, visible: Optional[bool] = True,
+                 min_thickness: Optional[float] = None, max_thickness: Optional[float] = None):
         self.name = name
         self.thickness = thickness
         self.rock_type = rock_type
@@ -13,6 +14,8 @@ class Layer:
         self.old_age = old_age
         self.dep_env = dep_env
         self.visible = visible
+        self.min_thickness = min_thickness
+        self.max_thickness = max_thickness
 
     def __repr__(self):
         return str(self.to_dict())
@@ -47,7 +50,9 @@ class Layer:
             'young_age': self.young_age,
             'old_age': self.old_age,
             'dep_env': self.dep_env.to_dict() if self.dep_env else None,
-            'visible': self.visible
+            'visible': self.visible,
+            'min_thickness': self.min_thickness,
+            'max_thickness': self.max_thickness
         }
     
     @classmethod
@@ -64,5 +69,7 @@ class Layer:
             young_age=data.get('young_age'),
             old_age=data.get('old_age'),
             dep_env=dep_env,
-            visible=data.get('visible')
+            visible=data.get('visible'),
+            min_thickness=data['min_thickness'],
+            max_thickness=data['max_thickness']
         )

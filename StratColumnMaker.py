@@ -9,7 +9,7 @@ from Deposition import DepositionalEnvironment
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
                                QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
-                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog)
+                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog, QSpacerItem, QSizePolicy)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QAction
 from functools import partial
@@ -67,6 +67,7 @@ class StratColumnMaker(QMainWindow):
         self.setWindowTitle("Stratigraphic Column Maker")
         self.setGeometry(100, 100, 1200, 800)
         self.showMaximized()
+        self.strat_column = None
         
         # Create toolbar
         self.create_toolbar()
@@ -399,11 +400,41 @@ class StratColumnMaker(QMainWindow):
                                 f"Failed to save file:\n{str(e)}")
 
     def reset_input_fields(self):
+        current_mode = self.scaling_mode_combo_box.currentData()
+
         self.name_input.clear()
         self.thickness_input.setValue(DEFAULT_THICKNESS)
-        self.formation_top_input.setValue(self.strat_column.max_depth)
+        self.min_thickness_input.setValue(DEFAULT_THICKNESS)
+        self.max_thickness_input.setValue(DEFAULT_THICKNESS)
+
+        if isinstance(self.strat_column, sc.StratColumn):
+            self.formation_top_input.setValue(self.strat_column.max_depth)
+        else:
+            self.formation_top_input.setValue(DEFAULT_FORMATION_TOP)
+
         self.young_age_input.setValue(DEFAULT_YOUNG_AGE)
         self.old_age_input.setValue(DEFAULT_OLD_AGE)
+
+        if current_mode == ScalingMode.CHRONOLOGY:
+            self.checkbox_formation_gap.setEnabled(False)
+            self.formation_top_input.setEnabled(False)
+            self.thickness_input.setEnabled(False)
+            self.max_thickness_input.setEnabled(True)
+            self.min_thickness_input.setEnabled(True)
+        elif current_mode == ScalingMode.THICKNESS:
+            self.checkbox_formation_gap.setEnabled(True)
+            self.formation_top_input.setEnabled(False)
+            self.thickness_input.setEnabled(True)
+            self.max_thickness_input.setEnabled(False)
+            self.min_thickness_input.setEnabled(False)
+        else:
+            self.checkbox_formation_gap.setEnabled(True)
+            self.formation_top_input.setEnabled(True)
+            self.thickness_input.setEnabled(True)
+            self.max_thickness_input.setEnabled(False)
+            self.min_thickness_input.setEnabled(False)
+
+        
         
     def validate_start(self, start_value):
         end_value = self.old_age_input.value()
@@ -422,9 +453,11 @@ class StratColumnMaker(QMainWindow):
         panel = QWidget()
         layout = QVBoxLayout(panel)
         form_layout = QHBoxLayout()
+        thickness_range_layout = QHBoxLayout()
+        render_range_layout = QHBoxLayout()
         
         # Layer input section
-        layout.addWidget(QLabel("Add New Layer:"))
+        layout.addWidget(QLabel("<b>Add New Layer:</b>"))
         
         # Layer name
         layout.addWidget(QLabel("Formation Name:"))
@@ -451,6 +484,28 @@ class StratColumnMaker(QMainWindow):
         self.thickness_input.setRange(1, 10000)
         self.thickness_input.setValue(DEFAULT_THICKNESS)
         layout.addWidget(self.thickness_input)
+
+        # Min max thickness for ScalingMode.CHRONOLOGY
+        thickness_range_layout.addWidget(QLabel("Minimum Thickness (m):"))
+
+        self.min_thickness_input = QSpinBox()
+        self.min_thickness_input.setStyleSheet("QSpinBox:disabled { color: transparent; }")
+        self.min_thickness_input.setRange(1, 10000)
+        self.min_thickness_input.setSingleStep(1)
+        self.min_thickness_input.setValue(DEFAULT_THICKNESS)
+
+        thickness_range_layout.addWidget(self.min_thickness_input)
+
+        thickness_range_layout.addWidget(QLabel("Maximum Thickness (m):"))
+        self.max_thickness_input = QSpinBox()
+        self.max_thickness_input.setStyleSheet("QSpinBox:disabled { color: transparent; }")
+        self.max_thickness_input.setRange(1, 10000)
+        self.max_thickness_input.setSingleStep(1)
+        self.max_thickness_input.setValue(DEFAULT_THICKNESS)
+        
+        thickness_range_layout.addWidget(self.max_thickness_input)
+
+        layout.addLayout(thickness_range_layout)
 
         # Formation Top
         layout.addWidget(QLabel("Formation Top (m):"))
@@ -485,8 +540,11 @@ class StratColumnMaker(QMainWindow):
         self.young_age_input.valueChanged.connect(self.validate_start)
         self.old_age_input.valueChanged.connect(self.validate_end)
 
+        # Spacer
+        layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
+
         # Eras, Periods, Epochs, Ages
-        layout.addWidget(QLabel("Display Options:"))
+        layout.addWidget(QLabel("<b>Modify Display Options:</b>"))
         checkbox_layout = QHBoxLayout()
         
         self.checkbox_eras = QCheckBox("Show Eras")
@@ -541,6 +599,31 @@ class StratColumnMaker(QMainWindow):
         formation_gap_layout.addStretch()  # Pushes content to the left
 
         layout.addLayout(formation_gap_layout)
+        
+        # Render region based on age range
+        render_range_layout.addWidget(QLabel("Display from age (Ma):"))
+
+        self.display_from_age_input = QDoubleSpinBox()
+        self.display_from_age_input.setDecimals(1)
+        self.display_from_age_input.setRange(0.0, DEFAULT_OLD_AGE)
+        self.display_from_age_input.setSingleStep(0.1)
+        self.display_from_age_input.setValue(DEFAULT_YOUNG_AGE)
+
+        render_range_layout.addWidget(self.display_from_age_input)
+
+        render_range_layout.addWidget(QLabel("Display to age (Ma):"))
+        self.display_to_age_input = QDoubleSpinBox()
+        self.display_to_age_input.setDecimals(1)
+        self.display_to_age_input.setRange(0.0, DEFAULT_OLD_AGE)
+        self.display_to_age_input.setSingleStep(0.1)
+        self.display_to_age_input.setValue(DEFAULT_OLD_AGE)
+        
+        render_range_layout.addWidget(self.display_to_age_input)
+
+        layout.addLayout(render_range_layout)
+
+        # Spacer
+        layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
         # Add layer button
         add_button = QPushButton("Add Layer")
@@ -555,6 +638,8 @@ class StratColumnMaker(QMainWindow):
         self.layer_table.setColumnCount(5)
         self.layer_table.setHorizontalHeaderLabels(["Name", "Thickness", "Type", "Visibility", "Action"])
         layout.addWidget(self.layer_table)
+
+        self.reset_input_fields()
         
         return panel
     
@@ -575,8 +660,15 @@ class StratColumnMaker(QMainWindow):
         
         selected_dep_env = self.dep_env_combo.currentData()
 
-        layer = Layer(name, thickness, selected_rock, formation_top, young_age, old_age, selected_dep_env)
-        
+        min_thickness = None
+        max_thickness = None
+
+        if self.min_thickness_input.isEnabled() and self.max_thickness_input.isEnabled():
+            min_thickness = self.min_thickness_input.value()
+            max_thickness = self.max_thickness_input.value()
+
+        layer = Layer(name, thickness, selected_rock, formation_top, young_age, old_age, selected_dep_env, min_thickness=min_thickness, max_thickness=max_thickness)
+
         self.strat_column.add_layer(layer)
         self.update_layer_table()
 
@@ -605,21 +697,7 @@ class StratColumnMaker(QMainWindow):
         # Get the selected ScalingMode enum
         current_mode = self.scaling_mode_combo_box.currentData()
         
-        if current_mode == ScalingMode.CHRONOLOGY:
-            self.checkbox_formation_gap.setEnabled(False)
-            self.formation_top_input.setEnabled(False)
-            self.thickness_input.setEnabled(False)
-            self.reset_input_fields()
-        elif current_mode == ScalingMode.THICKNESS:
-            self.checkbox_formation_gap.setEnabled(True)
-            self.formation_top_input.setEnabled(False)
-            self.thickness_input.setEnabled(True)
-            self.reset_input_fields()
-        else:
-            self.checkbox_formation_gap.setEnabled(True)
-            self.formation_top_input.setEnabled(True)
-            self.thickness_input.setEnabled(True)
-            self.reset_input_fields()
+        self.reset_input_fields()
         
         self.strat_column.update_scaling_mode(current_mode)
 
