@@ -15,7 +15,7 @@ from app import ScalingMode
 from enum import Enum
 from utils import get_resource_path
 
-DEFAULT_COLUMN_SIZE = 100
+DEFAULT_COLUMN_SIZE = 120
 
 class StratigraphicAgeTypes(Enum):
     ERAS = 'eras'
@@ -348,7 +348,7 @@ class StratColumn(QWidget):
                                     age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
             
             # Draw main layer rectangle
-            painter.setPen(QPen(Qt.black, 2))
+            painter.setPen(QPen(Qt.black, 1))
             painter.setBrush(QBrush(Qt.white))
             painter.drawRect(col_x, layer_top_y, col_width, layer_height)
             
@@ -377,7 +377,7 @@ class StratColumn(QWidget):
         
         if self.scaling_mode == ScalingMode.FORMATION_TOP_THICKNESS:
             # Draw depth scale (position it after the pattern column)
-            painter.setPen(QPen(Qt.black, 2))
+            painter.setPen(QPen(Qt.black, 1))
             scale_x = depoitional_col_x + depositional_col_width + 20
             painter.drawLine(scale_x, start_y, scale_x, start_y + total_display_height)
             
@@ -539,13 +539,27 @@ class StratColumn(QWidget):
             column_positions.append((age_col_x, age_col_width))
         column_positions.append((col_x, col_width))
         column_positions.append((pattern_col_x, pattern_col_width))
-        column_positions.append((depoitional_col_x, depositional_col_width))
+        # column_positions.append((depoitional_col_x, depositional_col_width))
         
         for col_x_pos, col_width_pos in column_positions:
             painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
 
-        # Draw each layer consecutively, ignoring age gaps
+        # Pre-calculate which layers have unconformities (age gaps)
+        gap_threshold = 1.0  # Million years - adjust as needed
+        layers_with_gaps = set()  # Will contain indices of layers that have gaps above them
+        wavy_boundaries = []  # Store positions where wavy boundaries should be drawn
+        
+        for i in range(1, len(sorted_layers)):
+            previous_layer = sorted_layers[i - 1]
+            current_layer = sorted_layers[i]
+            age_gap = current_layer.young_age - previous_layer.old_age
+            
+            if age_gap > gap_threshold:
+                layers_with_gaps.add(i)
+
+        # Calculate layer positions and store wavy boundary positions
         current_y = start_y
+        layer_positions = []
         
         for i, layer in enumerate(sorted_layers):
             # Calculate layer height based on age span (old_age - young_age)
@@ -558,6 +572,38 @@ class StratColumn(QWidget):
             
             layer_top_y = current_y
             
+            # Store layer position info
+            has_gap_above = i in layers_with_gaps
+            has_gap_below = (i + 1) in layers_with_gaps
+            
+            layer_positions.append({
+                'layer': layer,
+                'index': i,
+                'top_y': layer_top_y,
+                'height': layer_height,
+                'has_gap_above': has_gap_above,
+                'has_gap_below': has_gap_below
+            })
+            
+            # Move to next position
+            current_y += layer_height
+            
+            # Store wavy boundary position if there's a gap below
+            if has_gap_below:
+                age_gap = sorted_layers[i + 1].young_age - layer.old_age
+                wavy_boundaries.append({
+                    'y_position': current_y,
+                    'age_gap': age_gap
+                })
+
+        # First pass: Draw all layer contents (fills, age columns, text)
+        for layer_info in layer_positions:
+            layer = layer_info['layer']
+            layer_top_y = layer_info['top_y']
+            layer_height = layer_info['height']
+            has_gap_above = layer_info['has_gap_above']
+            has_gap_below = layer_info['has_gap_below']
+            
             # Get layer data
             layer_name = layer.name
             layer_rock_type = layer.rock_type
@@ -567,30 +613,83 @@ class StratColumn(QWidget):
             layer_max_thickness = layer.max_thickness
             layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
             
-            # Draw era column for this layer
-            if era_col_x is not None:
-                self.draw_age_column(painter, layer, layer_strat_ages, 
-                                    era_col_x, layer_top_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
-            
-            # Draw period column for this layer
-            if period_col_x is not None:
-                self.draw_age_column(painter, layer, layer_strat_ages, 
-                                    period_col_x, layer_top_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
+            # Helper function to draw age column content
+            def draw_age_column_content(col_x, col_width, age_type_name):
+                if col_x is None:
+                    return []
                 
-            # Draw epoch column for this layer
-            if epoch_col_x is not None:
-                self.draw_age_column(painter, layer, layer_strat_ages, 
-                                    epoch_col_x, layer_top_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
+                ages = layer_strat_ages.get(age_type_name, [])
+                if not ages:
+                    return []
                 
-            # Draw age column for this layer
-            if age_col_x is not None:
-                self.draw_age_column(painter, layer, layer_strat_ages, 
-                                    age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
+                layer_age_range = layer_old_age - layer_young_age
+                if layer_age_range <= 0:
+                    return []
+                
+                age_rectangles = []
+                for age in ages:
+                    age_name_text = age.get('name', 'Unknown')
+                    age_young = age.get('start_age', layer_young_age)
+                    age_old = age.get('end_age', layer_old_age)
+                    
+                    overlap_young = max(layer_young_age, age_young)
+                    overlap_old = min(layer_old_age, age_old)
+                    
+                    if overlap_old <= overlap_young:
+                        continue
+                    
+                    top_proportion = (overlap_young - layer_young_age) / layer_age_range
+                    bottom_proportion = (overlap_old - layer_young_age) / layer_age_range
+                    
+                    age_y = layer_top_y + (top_proportion * layer_height)
+                    age_height = (bottom_proportion - top_proportion) * layer_height
+                    
+                    age_rectangles.append({
+                        'name': age_name_text,
+                        'y': age_y,
+                        'height': age_height,
+                        'color': age.get('color', '#c8c8c8'),
+                        'overlap_young': overlap_young,
+                        'overlap_old': overlap_old
+                    })
+                    
+                    # Fill age rectangle with color
+                    color = QColor(age.get('color', '#c8c8c8'))
+                    painter.setBrush(QBrush(color))
+                    painter.setPen(Qt.NoPen)
+                    painter.drawRect(QRectF(col_x, age_y, col_width, age_height))
+                
+                return age_rectangles
             
-            # Draw main layer rectangle
-            painter.setPen(QPen(Qt.black, 2))
+            # Draw all age columns content
+            era_rects = draw_age_column_content(era_col_x, era_col_width, StratigraphicAgeTypes.ERAS.value)
+            period_rects = draw_age_column_content(period_col_x, period_col_width, StratigraphicAgeTypes.PERIODS.value)
+            epoch_rects = draw_age_column_content(epoch_col_x, epoch_col_width, StratigraphicAgeTypes.EPOCHS.value)
+            age_rects = draw_age_column_content(age_col_x, age_col_width, StratigraphicAgeTypes.AGES.value)
+            
+            # Store age rectangles for text drawing
+            layer_info['era_rects'] = era_rects
+            layer_info['period_rects'] = period_rects
+            layer_info['epoch_rects'] = epoch_rects
+            layer_info['age_rects'] = age_rects
+            
+            # Fill main layer rectangle (no borders yet)
             painter.setBrush(QBrush(Qt.white))
+            painter.setPen(Qt.NoPen)
             painter.drawRect(col_x, layer_top_y, col_width, layer_height)
+            
+            # Fill pattern column rectangle (no borders yet)
+            texture_brush = self.get_texture_brush(RockProperties.get_pattern(layer_rock_type))
+            if texture_brush:
+                painter.setBrush(texture_brush)
+            else:
+                painter.setBrush(QBrush(Qt.NoBrush))
+            painter.drawRect(pattern_col_x, layer_top_y, pattern_col_width, layer_height)
+            
+            # Fill depositional environment rectangle (no borders yet)
+            layer_dep_env_color = layer.dep_env.color
+            painter.setBrush(QBrush(QColor(layer_dep_env_color)))
+            painter.drawRect(depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
             
             # Draw layer label
             painter.setPen(QPen(Qt.black, 1))
@@ -611,28 +710,146 @@ class StratColumn(QWidget):
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
                         f"{layer_name}\n{layer.rock_type_display_name}\n{age_span_text}\n{thickness_span_text}")
             
-            # Draw pattern column for this layer
-            self.draw_pattern_column(painter, layer, 
-                                pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
+            # Draw depositional environment text
+            layer_dep_env_name = layer.dep_env.display_name
+            dep_text_rect = QRect(depoitional_col_x + 5, layer_top_y + 5, depositional_col_width - 10, layer_height - 10)
+            painter.drawText(dep_text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+                                f"{layer_dep_env_name.upper()}")
             
-            # Draw the depositional environment for this layer
-            self.draw_depositional_environment_column(painter, layer, 
-                                                depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
-            
-            # Move to next position for the next layer
-            current_y += layer_height
-            
-            # Check for age gap with the previous layer and draw wavy boundary if needed
-            if i > 0:
-                previous_layer = sorted_layers[i - 1]
-                age_gap = layer.young_age - previous_layer.old_age
+            # Draw age column text labels
+            def draw_age_text_labels(age_rectangles, col_x, col_width):
+                if not age_rectangles or col_x is None:
+                    return
                 
-                # Define threshold for what constitutes a significant gap (e.g., 1 Ma)
-                gap_threshold = 1.0  # Million years - adjust as needed
+                painter.setPen(QPen(Qt.black, 1))
+                for age_rect in age_rectangles:
+                    age_y = age_rect['y']
+                    age_height = age_rect['height']
+                    age_name_text = age_rect['name']
+                    overlap_young = age_rect['overlap_young']
+                    overlap_old = age_rect['overlap_old']
+                    
+                    if age_height > 15 and age_height <= 45:
+                        font = QFont()
+                        font.setPointSize(9)
+                        painter.setFont(font)
+                        text_rect = QRectF(col_x + 5, age_y + 2, col_width - 10, age_height - 4)
+                        painter.drawText(text_rect, Qt.AlignCenter, age_name_text)
+                    elif age_height > 45:
+                        font = QFont()
+                        third_height = age_height / 3
+                        top_rect = QRectF(col_x + 5, age_y + 2, col_width - 10, third_height)
+                        middle_rect = QRectF(col_x + 5, age_y + third_height, col_width - 10, third_height)
+                        bottom_rect = QRectF(col_x + 5, age_y + 2*third_height, col_width - 10, third_height)
+
+                        font.setPointSize(8)
+                        painter.setFont(font)
+                        age_text = f"{overlap_young} Ma"
+                        painter.drawText(top_rect, Qt.AlignCenter, age_text)
+
+                        font.setPointSize(9)
+                        painter.setFont(font)
+                        painter.drawText(middle_rect, Qt.AlignCenter, age_name_text)
+                        
+                        font.setPointSize(8)
+                        painter.setFont(font)
+                        age_text = f"{overlap_old} Ma"
+                        painter.drawText(bottom_rect, Qt.AlignCenter, age_text)
+            
+            # Draw text for all age columns
+            draw_age_text_labels(era_rects, era_col_x, era_col_width)
+            draw_age_text_labels(period_rects, period_col_x, period_col_width)
+            draw_age_text_labels(epoch_rects, epoch_col_x, epoch_col_width)
+            draw_age_text_labels(age_rects, age_col_x, age_col_width)
+
+        # Second pass: Draw all wavy boundaries
+        for boundary in wavy_boundaries:
+            self.draw_wavy_boundary(painter, boundary['y_position'], column_positions, boundary['age_gap'])
+
+        # Third pass: Draw all borders (avoiding wavy boundary areas)
+        for layer_info in layer_positions:
+            layer_top_y = layer_info['top_y']
+            layer_height = layer_info['height']
+            has_gap_above = layer_info['has_gap_above']
+            has_gap_below = layer_info['has_gap_below']
+            
+            # Helper function to draw age column borders
+            def draw_age_column_borders(col_x, col_width, age_rectangles):
+                if col_x is None:
+                    return
                 
-                if age_gap > gap_threshold:
-                    # Draw wavy boundary at the top of current layer (before drawing the layer)
-                    self.draw_wavy_boundary(painter, layer_top_y, column_positions, age_gap)
+                painter.setPen(QPen(Qt.black, 1))
+                
+                # Always draw left and right borders for the full height
+                painter.drawLine(col_x, layer_top_y, col_x, layer_top_y + layer_height)
+                painter.drawLine(col_x + col_width, layer_top_y, col_x + col_width, layer_top_y + layer_height)
+                
+                # Draw top border only if there's no gap above
+                if not has_gap_above:
+                    painter.drawLine(col_x, layer_top_y, col_x + col_width, layer_top_y)
+                
+                # Draw bottom border only if there's no gap below
+                if not has_gap_below:
+                    painter.drawLine(col_x, layer_top_y + layer_height, col_x + col_width, layer_top_y + layer_height)
+                
+                # Draw internal horizontal borders between age periods only if there are no gaps
+                if not has_gap_above and not has_gap_below and len(age_rectangles) > 1:
+                    sorted_rects = sorted(age_rectangles, key=lambda r: r['y'])
+                    for i in range(len(sorted_rects) - 1):
+                        current_rect = sorted_rects[i]
+                        boundary_y = current_rect['y'] + current_rect['height']
+                        painter.drawLine(col_x, boundary_y, col_x + col_width, boundary_y)
+            
+            # Draw borders for all age columns
+            draw_age_column_borders(era_col_x, era_col_width, layer_info['era_rects'])
+            draw_age_column_borders(period_col_x, period_col_width, layer_info['period_rects'])
+            draw_age_column_borders(epoch_col_x, epoch_col_width, layer_info['epoch_rects'])
+            draw_age_column_borders(age_col_x, age_col_width, layer_info['age_rects'])
+            
+            # Draw main column borders selectively
+            painter.setPen(QPen(Qt.black, 1))
+            
+            # Always draw left and right borders
+            painter.drawLine(col_x, layer_top_y, col_x, layer_top_y + layer_height)
+            painter.drawLine(col_x + col_width, layer_top_y, col_x + col_width, layer_top_y + layer_height)
+            
+            # Draw top border only if there's no gap above
+            if not has_gap_above:
+                painter.drawLine(col_x, layer_top_y, col_x + col_width, layer_top_y)
+            
+            # Draw bottom border only if there's no gap below
+            if not has_gap_below:
+                painter.drawLine(col_x, layer_top_y + layer_height, col_x + col_width, layer_top_y + layer_height)
+            
+            # Draw pattern column borders selectively
+            painter.setPen(QPen(Qt.black, 1))
+            
+            # Always draw left and right borders
+            painter.drawLine(pattern_col_x, layer_top_y, pattern_col_x, layer_top_y + layer_height)
+            painter.drawLine(pattern_col_x + pattern_col_width, layer_top_y, pattern_col_x + pattern_col_width, layer_top_y + layer_height)
+            
+            # Draw top border only if there's no gap above
+            if not has_gap_above:
+                painter.drawLine(pattern_col_x, layer_top_y, pattern_col_x + pattern_col_width, layer_top_y)
+            
+            # Draw bottom border only if there's no gap below
+            if not has_gap_below:
+                painter.drawLine(pattern_col_x, layer_top_y + layer_height, pattern_col_x + pattern_col_width, layer_top_y + layer_height)
+            
+            # Draw depositional environment column borders selectively
+            # Always draw left and right borders
+            painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x, layer_top_y + layer_height)
+            painter.drawLine(depoitional_col_x + depositional_col_width, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
+            
+            # # Draw top border only if there's no gap above
+            # if not has_gap_above:
+            # Always draw border for dep env
+            painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y)
+            
+            # # Draw bottom border only if there's no gap below
+            # if not has_gap_below:
+            # Always draw border for dep env
+            painter.drawLine(depoitional_col_x, layer_top_y + layer_height, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
 
     def draw_wavy_boundary(self, painter, y_position, column_positions, age_gap):
         """
