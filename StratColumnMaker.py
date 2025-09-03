@@ -648,6 +648,14 @@ class StratColumnMaker(QMainWindow):
         
         self.scaling_mode_combo_box.currentTextChanged.connect(self.on_scaling_mode_changed)
         
+        default_scaling_mode = ScalingMode.CHRONOLOGY
+
+        # Find the index of the item with the desired data
+        for i in range(self.scaling_mode_combo_box.count()):
+            if self.scaling_mode_combo_box.itemData(i) == default_scaling_mode:
+                self.scaling_mode_combo_box.setCurrentIndex(i)
+                break
+
         scaling_mode_layout.addWidget(self.scaling_mode_combo_box)
         layout.addLayout(scaling_mode_layout)
 

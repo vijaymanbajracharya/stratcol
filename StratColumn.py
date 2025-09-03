@@ -41,7 +41,7 @@ class StratColumn(QWidget):
             'show_epochs': True,
             'show_ages': True
         }
-        self.scaling_mode = ScalingMode.FORMATION_TOP_THICKNESS
+        self.scaling_mode = ScalingMode.CHRONOLOGY
         self.show_formation_gap = True
         self.display_age_range = (DEFAULT_YOUNG_AGE, DEFAULT_OLD_AGE)
     
