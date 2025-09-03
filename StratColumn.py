@@ -80,30 +80,23 @@ class StratColumn(QWidget):
 
     def add_layer(self, layer: Layer):
         # Check for overlaps before adding
-        has_overlap, overlapping_layer = self.check_layer_overlap(layer)
-        
-        if has_overlap:
-            # Show warning dialog
-            msg = QMessageBox()
-            msg.setWindowTitle("Layer Overlap Warning")
-            msg.setText(f"The new layer '{layer.name}' (top: {layer.formation_top}m, thickness: {layer.thickness}m) "
-                       f"would overlap with existing layer '{overlapping_layer.name}' "
-                       f"(top: {overlapping_layer.formation_top}m, thickness: {overlapping_layer.thickness}m).")
-            msg.setInformativeText("The layer will not be added. Please adjust the formation top or thickness.")
-            msg.setIcon(QMessageBox.Warning)
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec()
-            return False
-        
+        if self.scaling_mode == ScalingMode.FORMATION_TOP_THICKNESS:
+            has_overlap, overlapping_layer = self.check_layer_overlap(layer)
+            
+            if has_overlap:
+                # Show warning dialog
+                msg = QMessageBox()
+                msg.setWindowTitle("Layer Overlap Warning")
+                msg.setText(f"The new layer '{layer.name}' (top: {layer.formation_top}m, thickness: {layer.thickness}m) "
+                        f"would overlap with existing layer '{overlapping_layer.name}' "
+                        f"(top: {overlapping_layer.formation_top}m, thickness: {overlapping_layer.thickness}m).")
+                msg.setInformativeText("The layer will not be added. Please adjust the formation top or thickness.")
+                msg.setIcon(QMessageBox.Warning)
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.exec()
+                return False
+
         self.layers.append(layer)
-        # Sort layers by formation_top (shallowest first)
-        self.layers.sort(key=lambda l: l.formation_top)
-
-        _, max_depth = self.get_depth_range(self.layers)
-        self.max_depth = max_depth
-
-        _, max_age = self.get_age_range(self.layers)
-        self.max_age = max_age
 
         # Trigger paint event
         self.update()
@@ -239,6 +232,14 @@ class StratColumn(QWidget):
 
         # If no visible layers, don't render anything
         if not visible_layers:
+            return
+        
+        # Check if any layer lacks formation_top information
+        layers_without_formation_top = [layer for layer in visible_layers if layer.formation_top is None]
+        if layers_without_formation_top:
+            # Draw error message
+            painter.setPen(QPen(Qt.black, 1))
+            painter.drawText(self.rect().center(), "No formation top information in layers")
             return
     
         # Column dimensions
@@ -486,6 +487,175 @@ class StratColumn(QWidget):
                     
                     painter.drawText(scale_x + 15, text_y, f"{layer_bottom_depth:.0f}m")
                     last_text_y = text_y
+
+    def paint_scaling_mode_2(self, painter):       
+        # Filter for only visible layers AND layers within the display age range
+        from_age, to_age = self.display_age_range
+        visible_layers = [
+            layer for layer in self.layers 
+            if layer.visible and self.layer_intersects_age_range_full(layer, from_age, to_age)
+        ]
+
+        # If no visible layers, don't render anything
+        if not visible_layers:
+            return
+
+        # Column dimensions
+        era_col_width = DEFAULT_COLUMN_SIZE  # Width for era column
+        period_col_width = DEFAULT_COLUMN_SIZE # Width for period column
+        epoch_col_width = DEFAULT_COLUMN_SIZE # Width for epoch column
+        age_col_width = DEFAULT_COLUMN_SIZE # Width for age column
+        col_width = DEFAULT_COLUMN_SIZE      # Width for main column
+        pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
+        depositional_col_width = DEFAULT_COLUMN_SIZE # Width for depositional environment column
+        
+        # Calculate x positions based on enabled options
+        current_x = 0
+
+        # Era column
+        if self.display_options['show_eras']:
+            era_col_x = current_x
+            current_x += era_col_width
+        else:
+            era_col_x = None
+
+        # Period column
+        if self.display_options['show_periods']:
+            period_col_x = current_x
+            current_x += period_col_width
+        else:
+            period_col_x = None
+
+        # Epoch column
+        if self.display_options['show_epochs']:
+            epoch_col_x = current_x
+            current_x += epoch_col_width
+        else:
+            epoch_col_x = None
+
+        # Age column
+        if self.display_options['show_ages']:
+            age_col_x = current_x
+            current_x += age_col_width
+        else:
+            age_col_x = None
+
+        # Main column always comes after all geological time columns
+        col_x = current_x
+
+        # Pattern column comes after main column
+        pattern_col_x = col_x + col_width
+
+        # Depositional column comes after pattern column
+        depoitional_col_x = pattern_col_x + pattern_col_width
+
+        start_y = 50
+        available_height = self.height() - 150
+        
+        # Draw title
+        painter.setPen(QPen(Qt.black, 1))
+        title_font = QFont()
+        title_font.setPointSize(14)
+        title_font.setBold(True)
+        painter.setFont(title_font)
+        painter.drawText(0, 30, "Stratigraphic Column")
+
+        # Sort layers by age to ensure proper chronological order
+        sorted_layers = sorted(visible_layers, key=lambda l: l.young_age)
+        
+        # Calculate total thickness for scaling
+        total_thickness = sum(layer.thickness for layer in sorted_layers)
+        if total_thickness <= 0:
+            total_thickness = 1  # Avoid division by zero
+        
+        # Scale based on thickness only
+        scale = available_height / total_thickness
+        total_display_height = available_height
+        
+        # Draw column backgrounds (empty spaces)
+        painter.setPen(QPen(Qt.black, 1))
+        painter.setBrush(QBrush(Qt.white))
+        
+        # Draw background for all columns
+        column_positions = []
+        if era_col_x is not None:
+            column_positions.append((era_col_x, era_col_width))
+        if period_col_x is not None:
+            column_positions.append((period_col_x, period_col_width))
+        if epoch_col_x is not None:
+            column_positions.append((epoch_col_x, epoch_col_width))
+        if age_col_x is not None:
+            column_positions.append((age_col_x, age_col_width))
+        column_positions.append((col_x, col_width))
+        column_positions.append((pattern_col_x, pattern_col_width))
+        column_positions.append((depoitional_col_x, depositional_col_width))
+        
+        for col_x_pos, col_width_pos in column_positions:
+            painter.drawRect(col_x_pos, start_y, col_width_pos, total_display_height)
+
+        # Draw each layer sequentially based on chronological order
+        current_y = start_y
+        
+        for layer in sorted_layers:
+            # Calculate layer height based on thickness only
+            layer_height = layer.thickness * scale
+            layer_top_y = current_y
+            
+            # Get layer data
+            layer_name = layer.name
+            layer_thickness = layer.thickness
+            layer_rock_type = layer.rock_type
+            layer_young_age = layer.young_age
+            layer_old_age = layer.old_age
+            layer_strat_ages = self.chronomap.map_age_to_chronostratigraphy(layer_young_age, layer_old_age)
+            
+            # Draw era column for this layer
+            if era_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    era_col_x, layer_top_y, era_col_width, layer_height, StratigraphicAgeTypes.ERAS.value)
+            
+            # Draw period column for this layer
+            if period_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    period_col_x, layer_top_y, period_col_width, layer_height, StratigraphicAgeTypes.PERIODS.value)
+                
+            # Draw epoch column for this layer
+            if epoch_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    epoch_col_x, layer_top_y, epoch_col_width, layer_height, StratigraphicAgeTypes.EPOCHS.value)
+                
+            # Draw age column for this layer
+            if age_col_x is not None:
+                self.draw_age_column(painter, layer, layer_strat_ages, 
+                                    age_col_x, layer_top_y, age_col_width, layer_height, StratigraphicAgeTypes.AGES.value)
+            
+            # Draw main layer rectangle
+            painter.setPen(QPen(Qt.black, 1))
+            painter.setBrush(QBrush(Qt.white))
+            painter.drawRect(col_x, layer_top_y, col_width, layer_height)
+            
+            # Draw layer label
+            painter.setPen(QPen(Qt.black, 1))
+            font = QFont()
+            font.setPointSize(10)
+            painter.setFont(font)
+            
+            text_rect = QRect(col_x + 5, layer_top_y + 5, col_width - 10, layer_height - 10)
+            
+            # Display layer info with age information instead of formation depth
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+                    f"{layer_name}\n{layer.rock_type_display_name}\n{layer_thickness}m\nAge: {layer_young_age}-{layer_old_age} Ma")
+            
+            # Draw pattern column for this layer
+            self.draw_pattern_column(painter, layer, 
+                                pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
+            
+            # Draw the depositional environment for this layer
+            self.draw_depositional_environment_column(painter, layer, 
+                                                depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
+            
+            # Move to next layer position
+            current_y += layer_height
 
     def paint_scaling_mode_1(self, painter):
         # Filter for only visible layers AND layers within the display age range
@@ -968,7 +1138,7 @@ class StratColumn(QWidget):
             elif self.scaling_mode == ScalingMode.CHRONOLOGY:
                 self.paint_scaling_mode_1(painter)
             elif self.scaling_mode == ScalingMode.THICKNESS:
-                self.paint_scaling_mode_0(painter)
+                self.paint_scaling_mode_2(painter)
             else:
                 pass
                 

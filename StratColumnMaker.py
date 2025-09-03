@@ -759,8 +759,14 @@ class StratColumnMaker(QMainWindow):
         if isinstance(selected_rock, RockType):
             pattern = RockProperties.get_pattern(selected_rock)
         
-        thickness = self.thickness_input.value()
-        formation_top = self.formation_top_input.value()
+        if self.scaling_mode_combo_box.currentData() == ScalingMode.FORMATION_TOP_THICKNESS or self.scaling_mode_combo_box.currentData() == ScalingMode.THICKNESS:
+            thickness = self.thickness_input.value()
+
+        if self.scaling_mode_combo_box.currentData() == ScalingMode.FORMATION_TOP_THICKNESS:
+            formation_top = self.formation_top_input.value()
+        else:
+            formation_top = None
+
         young_age = self.young_age_input.value()
         old_age = self.old_age_input.value()
         
@@ -772,6 +778,9 @@ class StratColumnMaker(QMainWindow):
         if self.min_thickness_input.isEnabled() and self.max_thickness_input.isEnabled():
             min_thickness = self.min_thickness_input.value()
             max_thickness = self.max_thickness_input.value()
+
+        if self.scaling_mode_combo_box.currentData() == ScalingMode.CHRONOLOGY:
+            thickness = (min_thickness + max_thickness) / 2.0
 
         layer = Layer(name, thickness, selected_rock, formation_top, young_age, old_age, selected_dep_env, min_thickness=min_thickness, max_thickness=max_thickness)
 
