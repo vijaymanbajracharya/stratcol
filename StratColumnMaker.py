@@ -350,52 +350,41 @@ class StratColumnMaker(QMainWindow):
     def export_image(self):
         """Export column as high-resolution image with PNG and SVG options"""
         try:
-            # Create dialog to choose export format
-            format_dialog = QMessageBox(self)
-            format_dialog.setWindowTitle("Export Format")
-            format_dialog.setText("Choose export format:")
+            # Single file dialog with multiple format options
+            file_path, selected_filter = QFileDialog.getSaveFileName(
+                self,
+                "Export Stratigraphic Column",
+                "strat_column",  # Default filename without extension
+                "High-Resolution PNG (*.png);;Vector SVG (*.svg);;All files (*.*)"
+            )
             
-            png_button = format_dialog.addButton("High-Res PNG", QMessageBox.ButtonRole.ActionRole)
-            svg_button = format_dialog.addButton("Vector SVG", QMessageBox.ButtonRole.ActionRole)
-            cancel_button = format_dialog.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
-            
-            format_dialog.exec()
-            clicked_button = format_dialog.clickedButton()
-            
-            if clicked_button == cancel_button:
+            if not file_path:
                 return
             
-            # Get save location based on format
-            if clicked_button == png_button:
-                file_path, _ = QFileDialog.getSaveFileName(
-                    self,
-                    "Save High-Resolution PNG",
-                    "strat_column.png",
-                    "PNG files (*.png);;All files (*.*)"
-                )
-                if not file_path:
-                    return
+            # Determine export format based on selected filter
+            if "PNG" in selected_filter:
+                # Ensure PNG extension
                 if not file_path.lower().endswith('.png'):
                     file_path += '.png'
-                    
-                # Export as high-resolution PNG
                 self._export_high_res_png(file_path)
                 
-            elif clicked_button == svg_button:
-                file_path, _ = QFileDialog.getSaveFileName(
-                    self,
-                    "Save Vector SVG",
-                    "strat_column.svg",
-                    "SVG files (*.svg);;All files (*.*)"
-                )
-                if not file_path:
-                    return
+            elif "SVG" in selected_filter:
+                # Ensure SVG extension
                 if not file_path.lower().endswith('.svg'):
                     file_path += '.svg'
-                    
-                # Export as vector SVG
                 self._export_vector_svg(file_path)
                 
+            else:
+                # Handle "All files" - determine by file extension
+                if file_path.lower().endswith('.svg'):
+                    self._export_vector_svg(file_path)
+                elif file_path.lower().endswith('.png'):
+                    self._export_high_res_png(file_path)
+                else:
+                    # Default to PNG if no recognized extension
+                    file_path += '.png'
+                    self._export_high_res_png(file_path)
+                    
         except Exception as e:
             QMessageBox.critical(self, "Export Error", 
                                 f"Failed to export file:\n{str(e)}")
