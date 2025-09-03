@@ -9,9 +9,10 @@ from Deposition import DepositionalEnvironment
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
                                QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
-                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog, QSpacerItem, QSizePolicy)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QAction
+                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog, QSpacerItem, QSizePolicy, QWidget)
+from PySide6.QtCore import Qt, Signal, QPoint, QSize
+from PySide6.QtGui import QAction, QPainter, QPixmap, QRegion
+from PySide6.QtSvg import QSvgGenerator
 from functools import partial
 from app import ScalingMode
 from Layer import Layer
@@ -347,58 +348,158 @@ class StratColumnMaker(QMainWindow):
             )
 
     def export_image(self):
-        """Export column as image using file dialog with increased resolution"""
+        """Export column as high-resolution image with PNG and SVG options"""
         try:
-            # Define scale factor for higher resolution (2x, 3x, 4x, etc.)
-            scale_factor = 3  # Adjust this value as needed
+            # Create dialog to choose export format
+            format_dialog = QMessageBox(self)
+            format_dialog.setWindowTitle("Export Format")
+            format_dialog.setText("Choose export format:")
             
-            # Get the original widget size
-            original_size = self.strat_column.size()
+            png_button = format_dialog.addButton("High-Res PNG", QMessageBox.ButtonRole.ActionRole)
+            svg_button = format_dialog.addButton("Vector SVG", QMessageBox.ButtonRole.ActionRole)
+            cancel_button = format_dialog.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
             
-            # Create the pixmap at higher resolution
-            pixmap = self.strat_column.grab()
+            format_dialog.exec()
+            clicked_button = format_dialog.clickedButton()
             
-            # Scale up the pixmap for higher resolution
-            high_res_pixmap = pixmap.scaled(
-                original_size.width() * scale_factor,
-                original_size.height() * scale_factor,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation  # Use smooth transformation for better quality
-            )
-            
-            # Open file dialog to choose save location
-            file_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "Save Stratigraphic Column",
-                "strat_column.png",  # Default filename
-                "PNG files (*.png);;All files (*.*)"
-            )
-            
-            # Check if user canceled the dialog
-            if not file_path:
+            if clicked_button == cancel_button:
                 return
             
-            # Ensure the file has .png extension
-            if not file_path.lower().endswith('.png'):
-                file_path += '.png'
-            
-            # Save the high-resolution pixmap
-            success = high_res_pixmap.save(file_path, "PNG")
-            
-            if success:
-                # Show success message with full path and resolution info
-                abs_path = os.path.abspath(file_path)
-                final_size = high_res_pixmap.size()
-                QMessageBox.information(self, "Save Successful", 
-                                    f"High-resolution stratigraphic column saved to:\n{abs_path}\n\n"
-                                    )
-            else:
-                QMessageBox.warning(self, "Save Warning", 
-                                "File may not have been saved properly.")
+            # Get save location based on format
+            if clicked_button == png_button:
+                file_path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save High-Resolution PNG",
+                    "strat_column.png",
+                    "PNG files (*.png);;All files (*.*)"
+                )
+                if not file_path:
+                    return
+                if not file_path.lower().endswith('.png'):
+                    file_path += '.png'
+                    
+                # Export as high-resolution PNG
+                self._export_high_res_png(file_path)
+                
+            elif clicked_button == svg_button:
+                file_path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save Vector SVG",
+                    "strat_column.svg",
+                    "SVG files (*.svg);;All files (*.*)"
+                )
+                if not file_path:
+                    return
+                if not file_path.lower().endswith('.svg'):
+                    file_path += '.svg'
+                    
+                # Export as vector SVG
+                self._export_vector_svg(file_path)
                 
         except Exception as e:
-            QMessageBox.critical(self, "Save Error", 
-                                f"Failed to save file:\n{str(e)}")
+            QMessageBox.critical(self, "Export Error", 
+                                f"Failed to export file:\n{str(e)}")
+
+    def _export_high_res_png(self, file_path):
+        """Export as high-resolution PNG with customizable DPI"""
+        
+        try:
+            # Get DPI/scale factor from user
+            scale_factor = 3.0
+            
+            # Get original widget size
+            original_size = self.strat_column.size()
+            
+            # Calculate high-resolution dimensions
+            high_res_width = int(original_size.width() * scale_factor)
+            high_res_height = int(original_size.height() * scale_factor)
+            high_res_size = QSize(high_res_width, high_res_height)
+            
+            # Create high-resolution pixmap
+            pixmap = QPixmap(high_res_size)
+            pixmap.fill()  # Fill with white background
+            
+            # Create painter for high-resolution rendering
+            painter = QPainter(pixmap)
+            
+            # Enable high-quality rendering
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            
+            # Scale the painter for high-resolution output
+            painter.scale(scale_factor, scale_factor)
+            
+            # Render the widget to the high-resolution pixmap
+            self.strat_column.render(
+                painter, 
+                QPoint(), 
+                self.strat_column.rect(),
+                QWidget.RenderFlag.DrawWindowBackground | QWidget.RenderFlag.DrawChildren
+            )
+            
+            painter.end()
+            
+            # Save the pixmap as PNG
+            success = pixmap.save(file_path, "PNG", 95)  # 95% quality
+            
+            if success:
+                # Show success message with file info
+                file_size = os.path.getsize(file_path)
+                file_size_mb = file_size / (1024 * 1024)
+                abs_path = os.path.abspath(file_path)
+                
+                QMessageBox.information(
+                    self, 
+                    "Export Successful", 
+                    f"High-resolution PNG saved successfully!\n\n"
+                    f"Path: {abs_path}\n"
+                    f"Resolution: {high_res_width} × {high_res_height} pixels\n"
+                    f"File size: {file_size_mb:.2f} MB"
+                )
+            else:
+                QMessageBox.warning(
+                    self, 
+                    "Export Warning", 
+                    "Failed to save PNG file. Please check file permissions and disk space."
+                )
+                
+        except Exception as e:
+            QMessageBox.critical(
+                self, 
+                "Export Error", 
+                f"Failed to export high-resolution PNG:\n{str(e)}"
+            )
+            raise
+
+    def _export_vector_svg(self, file_path):
+        """Export as scalable vector graphics (SVG)"""
+        
+        # Create SVG generator
+        generator = QSvgGenerator()
+        generator.setFileName(file_path)
+        generator.setSize(self.strat_column.size())
+        generator.setViewBox(self.strat_column.rect())
+        generator.setTitle("Stratigraphic Column")
+        generator.setDescription("Vector export of stratigraphic column")
+        
+        # Create painter and render
+        painter = QPainter()
+        if painter.begin(generator):
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+            
+            # Render the widget to SVG
+            self.strat_column.render(painter, QPoint(), QRegion(), QWidget.RenderFlag.DrawWindowBackground | QWidget.RenderFlag.DrawChildren)
+            painter.end()
+            
+            # Show success message
+            abs_path = os.path.abspath(file_path)
+            QMessageBox.information(self, "Export Successful", 
+                                f"Vector SVG saved to:\n{abs_path}")
+        else:
+            QMessageBox.warning(self, "Export Warning", 
+                            "Failed to initialize SVG painter.")
 
     def reset_input_fields(self):
         current_mode = self.scaling_mode_combo_box.currentData()
