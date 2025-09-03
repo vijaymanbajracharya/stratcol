@@ -59,8 +59,9 @@ def populate_dep_env_combo(combo_box):
         combo_box.setItemData(combo_box.count() - 1, env)
 
 class StratColumnMaker(QMainWindow):
-    display_options_changed = Signal(dict)
+    age_display_options_changed = Signal(dict)
     show_formation_gap_changed = Signal(bool)
+    display_age_range_changed = Signal(float, float)
 
     def __init__(self):
         super().__init__()
@@ -542,34 +543,7 @@ class StratColumnMaker(QMainWindow):
 
         # Spacer
         layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
-        # Eras, Periods, Epochs, Ages
         layout.addWidget(QLabel("<b>Modify Display Options:</b>"))
-        checkbox_layout = QHBoxLayout()
-        
-        self.checkbox_eras = QCheckBox("Show Eras")
-        self.checkbox_periods = QCheckBox("Show Periods") 
-        self.checkbox_epochs = QCheckBox("Show Epochs")
-        self.checkbox_ages = QCheckBox("Show Ages")
-
-        # Default state
-        self.checkbox_eras.setChecked(True)
-        self.checkbox_periods.setChecked(True)
-        self.checkbox_epochs.setChecked(True)
-        self.checkbox_ages.setChecked(True)
-
-        # Connect to update method that will trigger repaints
-        self.checkbox_eras.stateChanged.connect(self.on_chrono_checkbox_changed)
-        self.checkbox_periods.stateChanged.connect(self.on_chrono_checkbox_changed)
-        self.checkbox_epochs.stateChanged.connect(self.on_chrono_checkbox_changed)
-        self.checkbox_ages.stateChanged.connect(self.on_chrono_checkbox_changed)
-        
-        checkbox_layout.addWidget(self.checkbox_eras)
-        checkbox_layout.addWidget(self.checkbox_periods)
-        checkbox_layout.addWidget(self.checkbox_epochs)
-        checkbox_layout.addWidget(self.checkbox_ages)
-
-        layout.addLayout(checkbox_layout)
 
         # Scaling mode layout
         # Plot by formation top, thickness, time
@@ -620,7 +594,41 @@ class StratColumnMaker(QMainWindow):
         
         render_range_layout.addWidget(self.display_to_age_input)
 
+        self.display_from_age_input.editingFinished.connect(self.on_display_age_range_changed)
+        self.display_to_age_input.editingFinished.connect(self.on_display_age_range_changed)
+
+        # Also connect valueChanged with a flag to detect if it's from user interaction
+        self.display_from_age_input.valueChanged.connect(self.on_value_changed_from_arrows_display_age_range)
+        self.display_to_age_input.valueChanged.connect(self.on_value_changed_from_arrows_display_age_range)
+
         layout.addLayout(render_range_layout)
+
+        # Eras, Periods, Epochs, Ages
+        checkbox_layout = QHBoxLayout()
+        
+        self.checkbox_eras = QCheckBox("Show Eras")
+        self.checkbox_periods = QCheckBox("Show Periods") 
+        self.checkbox_epochs = QCheckBox("Show Epochs")
+        self.checkbox_ages = QCheckBox("Show Ages")
+
+        # Default state
+        self.checkbox_eras.setChecked(True)
+        self.checkbox_periods.setChecked(True)
+        self.checkbox_epochs.setChecked(True)
+        self.checkbox_ages.setChecked(True)
+
+        # Connect to update method that will trigger repaints
+        self.checkbox_eras.stateChanged.connect(self.on_chrono_checkbox_changed)
+        self.checkbox_periods.stateChanged.connect(self.on_chrono_checkbox_changed)
+        self.checkbox_epochs.stateChanged.connect(self.on_chrono_checkbox_changed)
+        self.checkbox_ages.stateChanged.connect(self.on_chrono_checkbox_changed)
+        
+        checkbox_layout.addWidget(self.checkbox_eras)
+        checkbox_layout.addWidget(self.checkbox_periods)
+        checkbox_layout.addWidget(self.checkbox_epochs)
+        checkbox_layout.addWidget(self.checkbox_ages)
+
+        layout.addLayout(checkbox_layout)
 
         # Spacer
         layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
@@ -686,11 +694,23 @@ class StratColumnMaker(QMainWindow):
     def on_chrono_checkbox_changed(self):
         """Called when chrono checkbox state changes"""
         options = self.get_chrono_display_options()
-        self.display_options_changed.emit(options)
+        self.age_display_options_changed.emit(options)
 
     def on_formation_gap_checkbox_changed(self):
         """Called when formation gap checkbox state chages"""
         self.show_formation_gap_changed.emit(self.checkbox_formation_gap.isChecked())
+
+    def on_display_age_range_changed(self):
+        """Emit the display age range changed signal with current values"""
+        from_age = self.display_from_age_input.value()
+        to_age = self.display_to_age_input.value()
+        self.display_age_range_changed.emit(from_age, to_age)
+    
+    def on_value_changed_from_arrows_display_age_range(self):
+        # Only emit if the spinbox doesn't have focus (meaning it's likely from arrows/wheel)
+        sender = self.sender()
+        if not sender.lineEdit().hasFocus():
+            self.on_display_age_range_changed()
 
     def on_scaling_mode_changed(self, value):
         """Handle scaling mode change"""       

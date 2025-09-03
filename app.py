@@ -14,8 +14,9 @@ if __name__ == "__main__":
     window = scm.StratColumnMaker()
 
     # Connect class level signals
-    window.display_options_changed.connect(window.strat_column.update_display_options)
+    window.age_display_options_changed.connect(window.strat_column.update_age_display_options)
     window.show_formation_gap_changed.connect(window.strat_column.update_formation_gap)
+    window.display_age_range_changed.connect(window.strat_column.update_display_age_range)
 
     # Display
     window.show()

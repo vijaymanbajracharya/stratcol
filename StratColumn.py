@@ -16,6 +16,8 @@ from enum import Enum
 from utils import get_resource_path
 
 DEFAULT_COLUMN_SIZE = 120
+DEFAULT_YOUNG_AGE = 0.0
+DEFAULT_OLD_AGE = 4567.0
 
 class StratigraphicAgeTypes(Enum):
     ERAS = 'eras'
@@ -41,19 +43,24 @@ class StratColumn(QWidget):
         }
         self.scaling_mode = ScalingMode.FORMATION_TOP_THICKNESS
         self.show_formation_gap = True
+        self.display_age_range = (DEFAULT_YOUNG_AGE, DEFAULT_OLD_AGE)
     
     def update_scaling_mode(self, scaling_mode):
         '''Change scaling mode'''
         self.scaling_mode = scaling_mode
         self.update()
 
-    def update_display_options(self, options):
+    def update_age_display_options(self, options):
         """Slot to receive display option updates"""
         self.display_options = options
         self.update()
     
     def update_formation_gap(self, show_formation_gap):
         self.show_formation_gap = show_formation_gap
+        self.update()
+
+    def update_display_age_range(self, from_age, to_age):
+        self.display_age_range = (from_age, to_age)
         self.update()
 
     def check_layer_overlap(self, new_layer):
@@ -190,10 +197,46 @@ class StratColumn(QWidget):
         
         return min(all_ages), max(all_ages)
     
-    def paint_scaling_mode_0(self, painter):
-        # Filter for only visible layers at the very beginning
-        visible_layers = [layer for layer in self.layers if layer.visible]
+    def layer_intersects_age_range_partial(self, layer, from_age, to_age):
+        """
+        Check if a layer's age range intersects with the display age range.
         
+        Args:
+            layer: The layer object with young_age and old_age attributes
+            from_age: The younger age boundary (smaller value)
+            to_age: The older age boundary (larger value)
+        
+        Returns:
+            bool: True if the layer intersects with the age range
+        """
+        # Layer intersects if:
+        # - Layer's young age is less than display range's old age AND
+        # - Layer's old age is greater than display range's young age
+        return layer.young_age < to_age and layer.old_age > from_age
+    
+    def layer_intersects_age_range_full(self, layer, from_age, to_age):
+        """
+        Check if a layer's age range intersects with the display age range.
+        
+        Args:
+            layer: The layer object with young_age and old_age attributes
+            from_age: The younger age boundary (smaller value)
+            to_age: The older age boundary (larger value)
+        
+        Returns:
+            bool: True if the layer intersects with the age range
+        """       
+        # Layer must be completely within the age range
+        return layer.young_age >= from_age and layer.old_age <= to_age
+    
+    def paint_scaling_mode_0(self, painter):       
+        # Filter for only visible layers AND layers within the display age range
+        from_age, to_age = self.display_age_range
+        visible_layers = [
+            layer for layer in self.layers 
+            if layer.visible and self.layer_intersects_age_range_full(layer, from_age, to_age)
+        ]
+
         # If no visible layers, don't render anything
         if not visible_layers:
             return
@@ -445,8 +488,12 @@ class StratColumn(QWidget):
                     last_text_y = text_y
 
     def paint_scaling_mode_1(self, painter):
-        # Filter for only visible layers at the very beginning
-        visible_layers = [layer for layer in self.layers if layer.visible]
+        # Filter for only visible layers AND layers within the display age range
+        from_age, to_age = self.display_age_range
+        visible_layers = [
+            layer for layer in self.layers 
+            if layer.visible and self.layer_intersects_age_range_full(layer, from_age, to_age)
+        ]
         
         # If no visible layers, don't render anything
         if not visible_layers:
