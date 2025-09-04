@@ -28,8 +28,8 @@ class StratigraphicAgeTypes(Enum):
 class StratColumn(QWidget):
     def __init__(self):
         super().__init__()
-        self.layers = []  # List of layer dictionaries
-        self.setMinimumSize(500, 600)  # Increased width for era column
+        self.layers = []  
+        self.setMinimumSize(500, 600)  
         self.chronomap = chronomap()
         self.texture_brushes = None
         self.load_texture(scale_factor=0.10, crop_pixels=16)
@@ -72,7 +72,7 @@ class StratColumn(QWidget):
             existing_top = existing_layer.formation_top
             existing_bottom = existing_layer.formation_top + existing_layer.thickness
             
-            # Check for overlap: layers overlap if one starts before the other ends
+            # Check for overlap
             if (new_top < existing_bottom and new_bottom > existing_top):
                 return True, existing_layer
         
@@ -124,12 +124,10 @@ class StratColumn(QWidget):
 
     def load_texture(self, scale_factor=1.0, crop_pixels=5):
         """Load and cache the texture brush with scaling and cropping"""
-        self.texture_brushes = {}  # Dictionary to store all textures
+        self.texture_brushes = {} 
         
-        # Use the resource path helper function
         patterns_dir = get_resource_path("assets/patterns")
         
-        # Check if directory exists
         if not os.path.exists(patterns_dir):
             print(f"Directory {patterns_dir} not found")
             return
@@ -191,34 +189,12 @@ class StratColumn(QWidget):
         return min(all_ages), max(all_ages)
     
     def layer_intersects_age_range_partial(self, layer, from_age, to_age):
-        """
-        Check if a layer's age range intersects with the display age range.
-        
-        Args:
-            layer: The layer object with young_age and old_age attributes
-            from_age: The younger age boundary (smaller value)
-            to_age: The older age boundary (larger value)
-        
-        Returns:
-            bool: True if the layer intersects with the age range
-        """
         # Layer intersects if:
         # - Layer's young age is less than display range's old age AND
         # - Layer's old age is greater than display range's young age
         return layer.young_age < to_age and layer.old_age > from_age
     
-    def layer_intersects_age_range_full(self, layer, from_age, to_age):
-        """
-        Check if a layer's age range intersects with the display age range.
-        
-        Args:
-            layer: The layer object with young_age and old_age attributes
-            from_age: The younger age boundary (smaller value)
-            to_age: The older age boundary (larger value)
-        
-        Returns:
-            bool: True if the layer intersects with the age range
-        """       
+    def layer_intersects_age_range_full(self, layer, from_age, to_age):     
         # Layer must be completely within the age range
         return layer.young_age >= from_age and layer.old_age <= to_age
     
@@ -1071,20 +1047,15 @@ class StratColumn(QWidget):
     def draw_wavy_boundary(self, painter, y_position, column_positions, age_gap):
         """
         Draw a wavy line across all columns to indicate an unconformity (age gap).
-        
-        Args:
-            painter: QPainter object
-            y_position: Y coordinate where to draw the boundary
-            column_positions: List of tuples (x_position, width) for all columns
-            age_gap: Size of the age gap in million years
+    
         """
         
         # Save current painter state
         painter.save()
         
-        # Set pen for wavy line - make it distinctive, and disable brush
+        # Set pen for wavy line
         painter.setPen(QPen(Qt.black, 1))
-        painter.setBrush(Qt.NoBrush)  # This prevents any fill
+        painter.setBrush(Qt.NoBrush)
         
         # Calculate total width across all columns
         if not column_positions:
@@ -1096,8 +1067,8 @@ class StratColumn(QWidget):
         total_width = rightmost_x - leftmost_x
         
         # Wave parameters
-        wave_amplitude = 4  # Height of the waves
-        wave_frequency = 0.05  # How many waves per pixel (adjust for wave density)
+        wave_amplitude = 4 
+        wave_frequency = 0.05 
         
         # Create the wavy path
         path = QPainterPath()
@@ -1108,7 +1079,7 @@ class StratColumn(QWidget):
         path.moveTo(start_x, start_y)
         
         # Create wavy line by adding small line segments
-        num_points = int(total_width / 2)  # One point every 2 pixels
+        num_points = int(total_width / 2) 
         for i in range(1, num_points + 1):
             x = start_x + (i * total_width / num_points)
             # Create sine wave
@@ -1116,7 +1087,7 @@ class StratColumn(QWidget):
             y = start_y + wave_offset
             path.lineTo(x, y)
         
-        # Draw the wavy path (stroke only, no fill)
+        # Draw the wavy path
         painter.strokePath(path, painter.pen())
         
         # Restore painter state
@@ -1165,7 +1136,7 @@ class StratColumn(QWidget):
         ages = layer_strat_ages.get(age_name, [])
         
         if not ages:
-            # Draw empty rectangle if no ages (will show background)
+            # Draw empty rectangle if no ages
             return
         
         # Layer's age range
@@ -1190,7 +1161,7 @@ class StratColumn(QWidget):
                 continue
             
             # Calculate proportional position and height within the layer
-            # Position from top of layer (young age is at top)
+            # Position from top of layer 
             top_proportion = (overlap_young - layer_young) / layer_age_range
             bottom_proportion = (overlap_old - layer_young) / layer_age_range
             

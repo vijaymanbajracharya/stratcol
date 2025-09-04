@@ -295,7 +295,7 @@ class StratColumnMaker(QMainWindow):
             file_path, _ = QFileDialog.getSaveFileName(
                 self,
                 "Save Stratigraphic Column As...",
-                os.path.expanduser("~/strat_column.json"),  # Default filename in home directory
+                os.path.expanduser("~/strat_column.json"),
                 "JSON files (*.json);;All files (*.*)"
             )
             
@@ -336,7 +336,6 @@ class StratColumnMaker(QMainWindow):
                 f"Stratigraphic column saved successfully to:\n{os.path.abspath(file_path)}"
             )
             
-            # Optional: Store the current file path for future save operations
             self.current_file_path = file_path
             
         except Exception as e:
@@ -406,7 +405,7 @@ class StratColumnMaker(QMainWindow):
             
             # Create high-resolution pixmap
             pixmap = QPixmap(high_res_size)
-            pixmap.fill()  # Fill with white background
+            pixmap.fill()
             
             # Create painter for high-resolution rendering
             painter = QPainter(pixmap)
@@ -430,7 +429,7 @@ class StratColumnMaker(QMainWindow):
             painter.end()
             
             # Save the pixmap as PNG
-            success = pixmap.save(file_path, "PNG", 95)  # 95% quality
+            success = pixmap.save(file_path, "PNG", 95)
             
             if success:
                 # Show success message with file info
@@ -668,8 +667,7 @@ class StratColumnMaker(QMainWindow):
 
         formation_gap_layout.addWidget(formation_gap_label)
         formation_gap_layout.addWidget(self.checkbox_formation_gap)
-        formation_gap_layout.addStretch()  # Pushes content to the left
-
+        formation_gap_layout.addStretch() 
         layout.addLayout(formation_gap_layout)
         
         # Render region based on age range
@@ -695,7 +693,6 @@ class StratColumnMaker(QMainWindow):
         self.display_from_age_input.editingFinished.connect(self.on_display_age_range_changed)
         self.display_to_age_input.editingFinished.connect(self.on_display_age_range_changed)
 
-        # Also connect valueChanged with a flag to detect if it's from user interaction
         self.display_from_age_input.valueChanged.connect(self.on_value_changed_from_arrows_display_age_range)
         self.display_to_age_input.valueChanged.connect(self.on_value_changed_from_arrows_display_age_range)
 
@@ -736,7 +733,7 @@ class StratColumnMaker(QMainWindow):
         add_button.clicked.connect(self.add_layer)
         layout.addWidget(add_button)
         
-        layout.addWidget(QLabel(""))  # Spacer
+        layout.addWidget(QLabel(""))
         
         # Layer list
         layout.addWidget(QLabel("Current Layers:"))
@@ -814,7 +811,7 @@ class StratColumnMaker(QMainWindow):
         self.display_age_range_changed.emit(from_age, to_age)
     
     def on_value_changed_from_arrows_display_age_range(self):
-        # Only emit if the spinbox doesn't have focus (meaning it's likely from arrows/wheel)
+        # Only emit if the spinbox doesn't have focus
         sender = self.sender()
         if not sender.lineEdit().hasFocus():
             self.on_display_age_range_changed()

@@ -13,9 +13,6 @@ class ChronostratigraphicMapper:
     def __init__(self, data_directory: str = "data"):
         """
         Initialize the mapper with data from JSON files.
-        
-        Args:
-            data_directory (str): Path to directory containing JSON data files
         """
         self.data_directory = data_directory
         self.eras = []
@@ -62,16 +59,6 @@ class ChronostratigraphicMapper:
     def map_age_to_chronostratigraphy(self, min_age_ma: float, max_age_ma: float) -> Dict[str, List[str]]:
         """
         Maps an age range to all chronostratigraphic units.
-        
-        Args:
-            min_age_ma (float): Minimum age in millions of years ago (younger bound)
-            max_age_ma (float): Maximum age in millions of years ago (older bound)
-        
-        Returns:
-            dict: Dictionary containing lists of overlapping units
-        
-        Raises:
-            ValueError: If min_age > max_age or if ages are negative
         """
         # Validate inputs
         if min_age_ma < 0 or max_age_ma < 0:
@@ -112,10 +99,10 @@ if __name__ == "__main__":
     
     # Test mapping
     test_cases = [
-        (0, 10),      # Recent
-        (60, 70),     # K-Pg boundary
-        (250, 260),   # P-Tr boundary
-        (0, 100),     # Broad Cenozoic
+        (0, 10),      
+        (60, 70),     
+        (250, 260),   
+        (0, 100),     
     ]
     
     print("MAPPING EXAMPLES:")
