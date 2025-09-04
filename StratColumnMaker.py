@@ -89,6 +89,15 @@ class StratColumnMaker(QMainWindow):
         self.strat_column = sc.StratColumn()
         layout.addWidget(self.strat_column, 2)
 
+        # Set default scaling mode
+        default_scaling_mode = ScalingMode.CHRONOLOGY
+
+        # Find the index of the item with the desired data
+        for i in range(self.scaling_mode_combo_box.count()):
+            if self.scaling_mode_combo_box.itemData(i) == default_scaling_mode:
+                self.scaling_mode_combo_box.setCurrentIndex(i)
+                break
+
         # Activate toolbar
         self.toolbar.setEnabled(True)
         
@@ -646,14 +655,6 @@ class StratColumnMaker(QMainWindow):
             self.scaling_mode_combo_box.setItemData(self.scaling_mode_combo_box.count() - 1, mode)
         
         self.scaling_mode_combo_box.currentTextChanged.connect(self.on_scaling_mode_changed)
-        
-        default_scaling_mode = ScalingMode.CHRONOLOGY
-
-        # Find the index of the item with the desired data
-        for i in range(self.scaling_mode_combo_box.count()):
-            if self.scaling_mode_combo_box.itemData(i) == default_scaling_mode:
-                self.scaling_mode_combo_box.setCurrentIndex(i)
-                break
 
         scaling_mode_layout.addWidget(self.scaling_mode_combo_box)
         layout.addLayout(scaling_mode_layout)

@@ -10,13 +10,18 @@ class RockType(Enum):
     SANDSTONE = "sandstone"
     SANDSTONE_CROSSBEDDED = "sandstone_crossbedded"
     SANDSTONE_CALCAREOUS = "sandstone_calcareous"
+    SANDSTONE_SHALEBEDS = "sandstone_shale_beds"
+    SANDSTONE_COALBEDS = "sandstone_coal_beds"
     SILTSTONE = "siltstone"
     SHALE_MUDSTONE = "shale_mudstone"
+    MUDSTONE_EVAPORITEBEDS = "mudstone_evaporite_beds"
     SHALE_CARBONACEOUS_BLACK_SHALE = "shale_carbonaceous_black_shale"
     SANDY_SHALE = "sandy_shale"
     SHALEY_SANDSTONE = "shaley_sandstone"
     LIMESTONE = "limestone"
     LIMESTONE_OOLITIC = "limestone_oolitic"
+    LIMSTONE_SHALEBEDS = "limestone_shale_beds"
+    LIMESTONE_EVAPORITEBEDS = "limestone_evaporite_beds"
     SANDY_LIMESTONE = "sandy_limestone"
     DOLOSTONE = "dolostone"
     SHALE_CALCAREOUS_MARL = "shale_calcareous_marl"
@@ -60,13 +65,18 @@ class RockProperties:
         RockType.SANDSTONE: RockCategory.SEDIMENTARY,
         RockType.SANDSTONE_CROSSBEDDED: RockCategory.SEDIMENTARY,
         RockType.SANDSTONE_CALCAREOUS: RockCategory.SEDIMENTARY,
+        RockType.SANDSTONE_SHALEBEDS: RockCategory.SEDIMENTARY,
+        RockType.SANDSTONE_COALBEDS: RockCategory.SEDIMENTARY,
         RockType.SILTSTONE: RockCategory.SEDIMENTARY,
         RockType.SHALE_MUDSTONE: RockCategory.SEDIMENTARY,
+        RockType.MUDSTONE_EVAPORITEBEDS: RockCategory.SEDIMENTARY,
         RockType.SHALE_CARBONACEOUS_BLACK_SHALE: RockCategory.SEDIMENTARY,
         RockType.SANDY_SHALE: RockCategory.SEDIMENTARY,
         RockType.SHALEY_SANDSTONE: RockCategory.SEDIMENTARY,
         RockType.LIMESTONE: RockCategory.SEDIMENTARY,
         RockType.LIMESTONE_OOLITIC: RockCategory.SEDIMENTARY,
+        RockType.LIMSTONE_SHALEBEDS: RockCategory.SEDIMENTARY,
+        RockType.LIMESTONE_EVAPORITEBEDS: RockCategory.SEDIMENTARY,
         RockType.SANDY_LIMESTONE: RockCategory.SEDIMENTARY,
         RockType.DOLOSTONE: RockCategory.SEDIMENTARY,
         RockType.SHALE_CALCAREOUS_MARL: RockCategory.SEDIMENTARY,
@@ -96,13 +106,18 @@ class RockProperties:
         RockType.SANDSTONE: "607",
         RockType.SANDSTONE_CROSSBEDDED: "610",
         RockType.SANDSTONE_CALCAREOUS: "613",
+        RockType.SANDSTONE_SHALEBEDS: "607624",
+        RockType.SANDSTONE_COALBEDS: "607658",
         RockType.SILTSTONE: "616",
         RockType.SHALE_MUDSTONE: "620",
+        RockType.MUDSTONE_EVAPORITEBEDS: "620668",
         RockType.SHALE_CARBONACEOUS_BLACK_SHALE: "624",
         RockType.SANDY_SHALE: "619",
         RockType.SHALEY_SANDSTONE: "612",
         RockType.LIMESTONE: "627",
         RockType.LIMESTONE_OOLITIC: "635",
+        RockType.LIMSTONE_SHALEBEDS: "627624",
+        RockType.LIMESTONE_EVAPORITEBEDS: "627668",
         RockType.SANDY_LIMESTONE: "636",
         RockType.DOLOSTONE: "642",
         RockType.SHALE_CALCAREOUS_MARL: "623",
