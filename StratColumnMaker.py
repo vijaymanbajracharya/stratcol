@@ -9,7 +9,8 @@ from Deposition import DepositionalEnvironment
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLineEdit, QLabel, QComboBox, QSpinBox, 
                                QTableWidget, QTableWidgetItem, QColorDialog, QMessageBox,
-                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog, QSpacerItem, QSizePolicy, QWidget)
+                               QDoubleSpinBox, QCheckBox, QToolBar, QToolButton, QMenu, QFileDialog, QSpacerItem, QSizePolicy, QWidget, QDialog,
+                               QDialogButtonBox)
 from PySide6.QtCore import Qt, Signal, QPoint, QSize
 from PySide6.QtGui import QAction, QPainter, QPixmap, QRegion
 from PySide6.QtSvg import QSvgGenerator
@@ -58,6 +59,189 @@ def populate_dep_env_combo(combo_box):
     for env in sorted(DepositionalEnvironment, key=lambda e: e.display_name):
         combo_box.addItem(env.display_name)
         combo_box.setItemData(combo_box.count() - 1, env)
+
+class LayerEditDialog(QDialog):
+    def __init__(self, layer, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Edit Layer")
+        self.setModal(True)
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(300)
+        self.layer = layer
+        self.setup_ui()
+
+    def validate_start(self, start_value):
+        end_value = self.old_age_input.value()
+        if start_value >= end_value:
+            self.old_age_input.setValue(round(start_value + 0.1, 1))
+        self.old_age_input.setMinimum(round(start_value + 0.1, 1))
+
+    def validate_end(self, end_value):
+        start_value = self.young_age_input.value()
+        if end_value <= start_value:
+            self.young_age_input.setValue(round(end_value - 0.1, 1))
+        self.young_age_input.setMaximum(round(end_value - 0.1, 1))
+    
+    def accept(self):
+        """Override accept to update layer with new values before closing"""
+        # Update layer properties with values from input fields
+        self.layer.name = self.name_input.text().strip()
+        
+        # Update rock type
+        selected_rock = self.rock_type_combo.currentData()
+        if isinstance(selected_rock, RockType):
+            self.layer.rock_type = selected_rock
+        
+        # Update depositional environment
+        selected_dep_env = self.dep_env_combo.currentData()
+        if isinstance(selected_dep_env, DepositionalEnvironment):
+            self.layer.dep_env = selected_dep_env
+        
+        # Update thickness
+        self.layer.thickness = self.thickness_input.value()
+        
+        # Update min/max thickness
+        if self.min_thickness_input.isEnabled():
+            self.layer.min_thickness = self.min_thickness_input.value()
+        else:
+            self.layer.min_thickness = None
+            
+        if self.max_thickness_input.isEnabled():
+            self.layer.max_thickness = self.max_thickness_input.value()
+        else:
+            self.layer.max_thickness = None
+        
+        # Update formation top
+        if self.formation_top_input.isEnabled():
+            self.layer.formation_top = self.formation_top_input.value()
+        else:
+            self.layer.formation_top = None
+        
+        # Update ages
+        self.layer.young_age = self.young_age_input.value()
+        self.layer.old_age = self.old_age_input.value()
+        
+        # Validate that we have a layer name
+        if not self.layer.name:
+            QMessageBox.warning(self, "Warning", "Please enter a layer name")
+            return
+        
+        # Call parent accept to close dialog
+        super().accept()
+            
+        
+    def setup_ui(self):
+        """Set up the dialog UI"""
+        layout = QVBoxLayout(self)
+        form_layout = QHBoxLayout()
+        thickness_range_layout = QHBoxLayout()
+        
+        # Layer name
+        layout.addWidget(QLabel("Formation Name:"))
+        self.name_input = QLineEdit()
+        self.name_input.setText(self.layer.name)
+        layout.addWidget(self.name_input)
+        
+        # Rock type
+        layout.addWidget(QLabel("Rock Type:"))
+        self.rock_type_combo = QComboBox()
+        populate_rock_type_combo(self.rock_type_combo)
+        self.rock_type_combo.setCurrentText(RockProperties.get_display_name(self.layer.rock_type))
+        layout.addWidget(self.rock_type_combo)
+
+        # Depositional Environment
+        layout.addWidget(QLabel("Depositional Environment:"))
+        self.dep_env_combo = QComboBox()
+        populate_dep_env_combo(self.dep_env_combo)
+        self.dep_env_combo.setCurrentText(self.layer.dep_env.display_name)
+        layout.addWidget(self.dep_env_combo)
+        
+        # Thickness
+        layout.addWidget(QLabel("Thickness (m):"))
+        self.thickness_input = QSpinBox()
+        self.thickness_input.setStyleSheet("QSpinBox:disabled { color: transparent; }")
+        self.thickness_input.setRange(1, 10000)
+        self.thickness_input.setValue(self.layer.thickness)
+
+        layout.addWidget(self.thickness_input)
+
+        # Min max thickness
+        thickness_range_layout.addWidget(QLabel("Minimum Thickness (m):"))
+        
+        self.min_thickness_input = QSpinBox()
+        self.min_thickness_input.setStyleSheet("QSpinBox:disabled { color: transparent; }")
+        self.min_thickness_input.setRange(1, 10000)
+        self.min_thickness_input.setSingleStep(1)
+
+        if self.layer.min_thickness is not None:
+            self.min_thickness_input.setValue(self.layer.min_thickness)
+        else:
+            self.min_thickness_input.setEnabled(False)
+
+        thickness_range_layout.addWidget(self.min_thickness_input)
+
+        thickness_range_layout.addWidget(QLabel("Maximum Thickness (m):"))
+        self.max_thickness_input = QSpinBox()
+        self.max_thickness_input.setStyleSheet("QSpinBox:disabled { color: transparent; }")
+        self.max_thickness_input.setRange(1, 10000)
+        self.max_thickness_input.setSingleStep(1)
+
+        if self.layer.max_thickness is not None:
+            self.max_thickness_input.setValue(self.layer.max_thickness)
+        else:
+            self.max_thickness_input.setEnabled(False)
+        
+        thickness_range_layout.addWidget(self.max_thickness_input)
+
+        layout.addLayout(thickness_range_layout)
+
+        # Formation Top
+        layout.addWidget(QLabel("Formation Top (m):"))
+        self.formation_top_input = QSpinBox()
+        self.formation_top_input.setStyleSheet("QSpinBox:disabled { color: transparent; }")
+        self.formation_top_input.setRange(0, 999999)
+
+        if self.layer.formation_top is not None:
+            self.formation_top_input.setValue(self.layer.formation_top)
+        else:
+            self.formation_top_input.setEnabled(False)
+
+        layout.addWidget(self.formation_top_input)
+
+        # Stratigraphic Age
+        form_layout.addWidget(QLabel("Youngest Stratigraphic Age (Ma):"))
+
+        self.young_age_input = QDoubleSpinBox()
+        self.young_age_input.setDecimals(1)
+        self.young_age_input.setRange(0.0, DEFAULT_OLD_AGE)
+        self.young_age_input.setSingleStep(0.1)
+        self.young_age_input.setValue(self.layer.young_age)
+
+        form_layout.addWidget(self.young_age_input)
+
+        form_layout.addWidget(QLabel("Oldest Stratigraphic Age (Ma):"))
+        self.old_age_input = QDoubleSpinBox()
+        self.old_age_input.setDecimals(1)
+        self.old_age_input.setRange(0.0, DEFAULT_OLD_AGE)
+        self.old_age_input.setSingleStep(0.1)
+        self.old_age_input.setValue(self.layer.old_age)
+        
+        form_layout.addWidget(self.old_age_input)
+
+        layout.addLayout(form_layout)
+
+        self.young_age_input.valueChanged.connect(self.validate_start)
+        self.old_age_input.valueChanged.connect(self.validate_end)
+        
+        # Button box with Accept and Cancel
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            Qt.Horizontal
+        )
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        
+        layout.addWidget(button_box)
 
 class StratColumnMaker(QMainWindow):
     age_display_options_changed = Signal(dict)
@@ -741,6 +925,7 @@ class StratColumnMaker(QMainWindow):
         self.layer_table = QTableWidget()
         self.layer_table.setColumnCount(5)
         self.layer_table.setHorizontalHeaderLabels(["Name", "Thickness", "Type", "Visibility", "Action"])
+        self.layer_table.verticalHeader().setDefaultSectionSize(60)
         layout.addWidget(self.layer_table)
 
         self.reset_input_fields()
@@ -851,13 +1036,44 @@ class StratColumnMaker(QMainWindow):
 
             self.layer_table.setCellWidget(i, 3, visibility_checkbox_widget)
             
+            # Action buttons layout
+            action_widget = QWidget()
+            action_btn_layout = QVBoxLayout(action_widget)
+
+            # Edit button
+            edit_btn = QPushButton("Edit")
+            edit_btn.clicked.connect(partial(self.edit_layer, i))
+
             # Remove button
             remove_btn = QPushButton("Remove")
             remove_btn.clicked.connect(partial(self.remove_layer, i))
-            self.layer_table.setCellWidget(i, 4, remove_btn)
 
+            action_btn_layout.addWidget(edit_btn)
+            action_btn_layout.addWidget(remove_btn)
+
+            # Remove margins for a cleaner look
+            action_btn_layout.setContentsMargins(0, 0, 0, 0)
+            action_btn_layout.setSpacing(0)
+            action_btn_layout.setAlignment(Qt.AlignCenter)
+
+            # Set the widget to the table cell
+            self.layer_table.setCellWidget(i, 4, action_widget)
             
-    
+    def edit_layer(self, index):
+        """Edit a layer from the column"""
+        if index < 0 or index >= len(self.strat_column.layers):
+            return
+        
+        # Create and show the edit dialog
+        layer = self.strat_column.layers[index]
+        dialog = LayerEditDialog(layer, self)
+        
+        if dialog.exec() == QDialog.Accepted:
+            self.strat_column.update()
+            self.update_layer_table()
+        else:
+            pass
+
     def remove_layer(self, index):
         """Remove a layer from the column"""
         self.strat_column.remove_layer(index)

@@ -101,17 +101,14 @@ class StratColumn(QWidget):
         # Trigger paint event
         self.update()
         return True
-        
+    
+    def edit_layer(self, index):
+        pass
+    
     def remove_layer(self, index):
         if 0 <= index < len(self.layers):
             del self.layers[index]
             self.update()
-        
-        _, max_depth = self.get_depth_range(self.layers)
-        self.max_depth = max_depth
-
-        _, max_age = self.get_age_range(self.layers)
-        self.max_age = max_age
     
     def toggle_visibility_layer(self, index):
         if 0 <= index < len(self.layers):
