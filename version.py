@@ -52,6 +52,6 @@ if __name__ == "__main__":
         file_description="Stratigraphic Column Maker - A tool for creating geological stratigraphic columns",
         internal_name="stratcol",
         copyright_notice="Copyright © 2025 EGI. All rights reserved.",
-        original_filename="stratcol.exe",
+        original_filename="Stratigraphic Column Maker.exe",
         product_name="Stratigraphic Column Maker"
     )

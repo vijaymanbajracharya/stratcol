@@ -128,6 +128,9 @@ class LayerEditDialog(QDialog):
         
         # Call parent accept to close dialog
         super().accept()
+    
+    def reject(self):
+        return super().reject()
             
         
     def setup_ui(self):
