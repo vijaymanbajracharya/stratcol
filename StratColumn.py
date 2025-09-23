@@ -956,7 +956,7 @@ class StratColumn(QWidget):
                 thickness_span_text = ""
                 
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
-                        f"{layer_name}\n{layer.rock_type_display_name}\n{age_span_text}\n{thickness_span_text}")
+                        f"{layer_name}\n{layer.rock_type_display_name}\n{thickness_span_text}\n{age_span_text}")
             
             # Draw depositional environment text - only if column is shown and layer has valid dep env
             if depoitional_col_x is not None and has_valid_depositional_env(layer):
