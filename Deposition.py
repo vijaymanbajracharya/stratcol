@@ -17,6 +17,7 @@ class DepositionalEnvironment(Enum):
     SHALLOW_MARINE_SHELF = ("Shallow marine / Shelf", "#DAE9F8")
     SLOPE_MARINE = ("Slope marine", "#D0D0D0")
     DEEP_MARINE = ("Deep marine", "#4D93D9")
+    UNKNOWN_NONE = ("Unknown/None", "#FFFFFF")
     
     def __init__(self, display_name, color):
         self.display_name = display_name

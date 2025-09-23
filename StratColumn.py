@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt, QRectF, QRect
 from ChronostratigraphicMapper import ChronostratigraphicMapper as chronomap
 from Lithology import RockCategory, RockProperties, RockType
 from app import ScalingMode
+from Deposition import DepositionalEnvironment
 
 from enum import Enum
 from utils import get_resource_path
@@ -224,6 +225,15 @@ class StratColumn(QWidget):
         pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
         depositional_col_width = DEFAULT_COLUMN_SIZE # Width for depositional environment column
         
+        # Check if we should show depositional environment column
+        # Only show if at least one layer has something other than UNKNOWN_NONE
+        show_depositional_column = any(
+            hasattr(layer, 'dep_env') and 
+            layer.dep_env is not None and
+            layer.dep_env != DepositionalEnvironment.UNKNOWN_NONE
+            for layer in visible_layers
+        )
+
         # Calculate x positions based on enabled options
         current_x = 0
 
@@ -262,7 +272,10 @@ class StratColumn(QWidget):
         pattern_col_x = col_x + col_width
 
         # Depositional column comes after pattern column
-        depoitional_col_x = pattern_col_x + pattern_col_width
+        if show_depositional_column:
+            depoitional_col_x = pattern_col_x + pattern_col_width
+        else:
+            depoitional_col_x = None
 
         start_y = 50
         available_height = self.height() - 150
@@ -303,7 +316,8 @@ class StratColumn(QWidget):
             column_positions.append((age_col_x, age_col_width))
         column_positions.append((col_x, col_width))
         column_positions.append((pattern_col_x, pattern_col_width))
-        column_positions.append((depoitional_col_x, depositional_col_width))
+        if depoitional_col_x is not None:
+            column_positions.append((depoitional_col_x, depositional_col_width))
         
         # Calculate total height based on show_formation_gap setting
         if self.show_formation_gap:
@@ -389,13 +403,18 @@ class StratColumn(QWidget):
                                 pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
             
             # Draw the depositional environment for this layer
-            self.draw_depositional_environment_column(painter, layer, 
-                                                depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
+            if depoitional_col_x is not None:
+                self.draw_depositional_environment_column(painter, layer, depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
         
         if self.scaling_mode == ScalingMode.FORMATION_TOP_THICKNESS:
             # Draw depth scale (position it after the pattern column)
             painter.setPen(QPen(Qt.black, 1))
-            scale_x = depoitional_col_x + depositional_col_width + 20
+
+            if depoitional_col_x is not None:
+                scale_x = depoitional_col_x + depositional_col_width + 20
+            else:
+                scale_x = pattern_col_x + pattern_col_width + 20
+
             painter.drawLine(scale_x, start_y, scale_x, start_y + total_display_height)
             
             # Add scale markers showing actual formation depths for each layer
@@ -482,6 +501,15 @@ class StratColumn(QWidget):
         pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
         depositional_col_width = DEFAULT_COLUMN_SIZE # Width for depositional environment column
         
+        # Check if we should show depositional environment column
+        # Only show if at least one layer has something other than UNKNOWN_NONE
+        show_depositional_column = any(
+            hasattr(layer, 'dep_env') and 
+            layer.dep_env is not None and
+            layer.dep_env != DepositionalEnvironment.UNKNOWN_NONE
+            for layer in visible_layers
+        )
+
         # Calculate x positions based on enabled options
         current_x = 0
 
@@ -520,7 +548,10 @@ class StratColumn(QWidget):
         pattern_col_x = col_x + col_width
 
         # Depositional column comes after pattern column
-        depoitional_col_x = pattern_col_x + pattern_col_width
+        if show_depositional_column:
+            depoitional_col_x = pattern_col_x + pattern_col_width
+        else:
+            depoitional_col_x = None
 
         start_y = 50
         available_height = self.height() - 150
@@ -561,7 +592,9 @@ class StratColumn(QWidget):
             column_positions.append((age_col_x, age_col_width))
         column_positions.append((col_x, col_width))
         column_positions.append((pattern_col_x, pattern_col_width))
-        column_positions.append((depoitional_col_x, depositional_col_width))
+        
+        if depoitional_col_x is not None:
+            column_positions.append((depoitional_col_x, depositional_col_width))
         
         for col_x_pos, col_width_pos in column_positions:
             painter.drawRect(col_x_pos, start_y, col_width_pos, total_display_height)
@@ -624,8 +657,8 @@ class StratColumn(QWidget):
                                 pattern_col_x, layer_top_y, pattern_col_width, layer_height, RockProperties.get_pattern(layer_rock_type))
             
             # Draw the depositional environment for this layer
-            self.draw_depositional_environment_column(painter, layer, 
-                                                depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
+            if depoitional_col_x is not None:
+                self.draw_depositional_environment_column(painter, layer, depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
             
             # Move to next layer position
             current_y += layer_height
@@ -651,6 +684,26 @@ class StratColumn(QWidget):
         pattern_col_width = DEFAULT_COLUMN_SIZE # Width for pattern column
         depositional_col_width = DEFAULT_COLUMN_SIZE # Width for depositional environment column
         
+        # Helper function to check if a layer has valid depositional environment
+        def has_valid_depositional_env(layer):
+            if not hasattr(layer, 'dep_env'):
+                return False
+            dep_env = layer.dep_env
+            if dep_env is None:
+                return False
+            # Handle both enum instances and string/dict representations
+            if isinstance(dep_env, DepositionalEnvironment):
+                return dep_env != DepositionalEnvironment.UNKNOWN_NONE
+            elif isinstance(dep_env, str):
+                return dep_env != 'UNKNOWN_NONE' and dep_env != 'Unknown/None'
+            elif isinstance(dep_env, dict):
+                return dep_env.get('name') != 'UNKNOWN_NONE' and dep_env.get('display_name') != 'Unknown/None'
+            return False
+        
+        # Check if we should show depositional environment column
+        # Only show if at least one layer has something other than UNKNOWN_NONE
+        show_depositional_column = any(has_valid_depositional_env(layer) for layer in visible_layers)
+
         # Calculate x positions based on enabled options
         current_x = 0
 
@@ -688,8 +741,11 @@ class StratColumn(QWidget):
         # Pattern column comes after main column
         pattern_col_x = col_x + col_width
 
-        # Depositional column comes after pattern column
-        depoitional_col_x = pattern_col_x + pattern_col_width
+        # Depositional column comes after pattern column (only if we're showing it)
+        if show_depositional_column:
+            depoitional_col_x = pattern_col_x + pattern_col_width
+        else:
+            depoitional_col_x = None
 
         start_y = 50
         available_height = self.height() - 150
@@ -729,7 +785,8 @@ class StratColumn(QWidget):
             column_positions.append((age_col_x, age_col_width))
         column_positions.append((col_x, col_width))
         column_positions.append((pattern_col_x, pattern_col_width))
-        # column_positions.append((depoitional_col_x, depositional_col_width))
+        if depoitional_col_x is not None:
+            column_positions.append((depoitional_col_x, depositional_col_width))
         
         for col_x_pos, col_width_pos in column_positions:
             painter.drawRect(col_x_pos, start_y, col_width_pos, available_height)
@@ -876,10 +933,11 @@ class StratColumn(QWidget):
                 painter.setBrush(QBrush(Qt.NoBrush))
             painter.drawRect(pattern_col_x, layer_top_y, pattern_col_width, layer_height)
             
-            # Fill depositional environment rectangle (no borders yet)
-            layer_dep_env_color = layer.dep_env.color
-            painter.setBrush(QBrush(QColor(layer_dep_env_color)))
-            painter.drawRect(depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
+            # Fill depositional environment rectangle (no borders yet) - only if column is shown and layer has valid dep env
+            if depoitional_col_x is not None and has_valid_depositional_env(layer):
+                layer_dep_env_color = layer.dep_env.color
+                painter.setBrush(QBrush(QColor(layer_dep_env_color)))
+                painter.drawRect(depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
             
             # Draw layer label
             painter.setPen(QPen(Qt.black, 1))
@@ -900,11 +958,12 @@ class StratColumn(QWidget):
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
                         f"{layer_name}\n{layer.rock_type_display_name}\n{age_span_text}\n{thickness_span_text}")
             
-            # Draw depositional environment text
-            layer_dep_env_name = layer.dep_env.display_name
-            dep_text_rect = QRect(depoitional_col_x + 5, layer_top_y + 5, depositional_col_width - 10, layer_height - 10)
-            painter.drawText(dep_text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
-                                f"{layer_dep_env_name.upper()}")
+            # Draw depositional environment text - only if column is shown and layer has valid dep env
+            if depoitional_col_x is not None and has_valid_depositional_env(layer):
+                layer_dep_env_name = layer.dep_env.display_name
+                dep_text_rect = QRect(depoitional_col_x + 5, layer_top_y + 5, depositional_col_width - 10, layer_height - 10)
+                painter.drawText(dep_text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+                                    f"{layer_dep_env_name.upper()}")
             
             # Draw age column text labels
             def draw_age_text_labels(age_rectangles, col_x, col_width):
@@ -958,6 +1017,7 @@ class StratColumn(QWidget):
 
         # Third pass: Draw all borders (avoiding wavy boundary areas)
         for layer_info in layer_positions:
+            layer = layer_info['layer']
             layer_top_y = layer_info['top_y']
             layer_height = layer_info['height']
             has_gap_above = layer_info['has_gap_above']
@@ -1026,20 +1086,15 @@ class StratColumn(QWidget):
             if not has_gap_below:
                 painter.drawLine(pattern_col_x, layer_top_y + layer_height, pattern_col_x + pattern_col_width, layer_top_y + layer_height)
             
-            # Draw depositional environment column borders selectively
-            # Always draw left and right borders
-            painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x, layer_top_y + layer_height)
-            painter.drawLine(depoitional_col_x + depositional_col_width, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
-            
-            # # Draw top border only if there's no gap above
-            # if not has_gap_above:
-            # Always draw border for dep env
-            painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y)
-            
-            # # Draw bottom border only if there's no gap below
-            # if not has_gap_below:
-            # Always draw border for dep env
-            painter.drawLine(depoitional_col_x, layer_top_y + layer_height, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
+            # Draw depositional environment column borders selectively - only if column is shown
+            if depoitional_col_x is not None:
+                # Always draw left and right borders
+                painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x, layer_top_y + layer_height)
+                painter.drawLine(depoitional_col_x + depositional_col_width, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
+                
+                # Always draw top and bottom borders for depositional environment column
+                painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y)
+                painter.drawLine(depoitional_col_x, layer_top_y + layer_height, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
 
     def draw_wavy_boundary(self, painter, y_position, column_positions, age_gap):
         """
