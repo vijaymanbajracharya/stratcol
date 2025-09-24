@@ -20,6 +20,22 @@ DEFAULT_COLUMN_SIZE = 120
 DEFAULT_YOUNG_AGE = 0.0
 DEFAULT_OLD_AGE = 4567.0
 
+def get_contrasting_color_from_hex(hex_color):
+    """Return white QColor for dark backgrounds, black QColor for light backgrounds"""
+    # Remove # if present
+    hex_color = hex_color.lstrip('#')
+    
+    # Convert hex to RGB
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+    
+    # Calculate luminance using standard formula
+    luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    
+    # Return white for dark backgrounds (luminance < 0.5), black for light
+    return QColor(255, 255, 255) if luminance < 0.5 else QColor(0, 0, 0)
+
 class StratigraphicAgeTypes(Enum):
     ERAS = 'eras'
     PERIODS = 'periods'
@@ -961,10 +977,14 @@ class StratColumn(QWidget):
             # Draw depositional environment text - only if column is shown and layer has valid dep env
             if depoitional_col_x is not None and has_valid_depositional_env(layer):
                 layer_dep_env_name = layer.dep_env.display_name
+                layer_dep_env_color = layer.dep_env.color
+
+                text_color = get_contrasting_color_from_hex(layer_dep_env_color) 
+                painter.setPen(QPen(text_color, 1))  
                 dep_text_rect = QRect(depoitional_col_x + 5, layer_top_y + 5, depositional_col_width - 10, layer_height - 10)
                 painter.drawText(dep_text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
                                     f"{layer_dep_env_name.upper()}")
-            
+
             # Draw age column text labels
             def draw_age_text_labels(age_rectangles, col_x, col_width):
                 if not age_rectangles or col_x is None:
@@ -977,6 +997,12 @@ class StratColumn(QWidget):
                     age_name_text = age_rect['name']
                     overlap_young = age_rect['overlap_young']
                     overlap_old = age_rect['overlap_old']
+
+                    bg_color = age_rect.get('color', '#c8c8c8')
+
+                    # Calculate contrasting text color
+                    text_color = get_contrasting_color_from_hex(bg_color)
+                    painter.setPen(QPen(text_color, 1))
                     
                     if age_height > 15 and age_height <= 45:
                         font = QFont()
@@ -1222,6 +1248,7 @@ class StratColumn(QWidget):
             
             # Draw age rectangle with color
             color = QColor(age.get('color', '#c8c8c8'))
+            
             painter.setBrush(QBrush(color))
             painter.setPen(QPen(Qt.black, 1))
             painter.drawRect(QRectF(x, age_y, width, age_height))
@@ -1231,7 +1258,12 @@ class StratColumn(QWidget):
                 font = QFont()
                 font.setPointSize(9)
                 painter.setFont(font)
-                painter.setPen(QPen(Qt.black, 1))
+
+                bg_color = age.get('color', '#c8c8c8')
+
+                # Calculate contrasting text color
+                text_color = get_contrasting_color_from_hex(bg_color)
+                painter.setPen(QPen(text_color, 1))
                 
                 # Center the text in the age rectangle
                 text_rect = QRectF(x + 5, age_y + 2, width - 10, age_height - 4)
@@ -1245,22 +1277,25 @@ class StratColumn(QWidget):
                 middle_rect = QRectF(x + 5, age_y + third_height, width - 10, third_height)
                 bottom_rect = QRectF(x + 5, age_y + 2*third_height, width - 10, third_height)
 
+                bg_color = age.get('color', '#c8c8c8')
+
+                # Calculate contrasting text color
+                text_color = get_contrasting_color_from_hex(bg_color)
+                painter.setPen(QPen(text_color, 1))
+
                 # Add age labels if space permits
                 font.setPointSize(8)
                 painter.setFont(font)
-                painter.setPen(QPen(Qt.black, 1))
                 age_text = f"{overlap_young} Ma"
                 painter.drawText(top_rect, Qt.AlignCenter, age_text)
 
                 font.setPointSize(9)
                 painter.setFont(font)
-                painter.setPen(QPen(Qt.black, 1))
                 painter.drawText(middle_rect, Qt.AlignCenter, age_name)
                 
                 # Add age labels if space permits
                 font.setPointSize(8)
                 painter.setFont(font)
-                painter.setPen(QPen(Qt.black, 1))
                 age_text = f"{overlap_old} Ma"
                 painter.drawText(bottom_rect, Qt.AlignCenter, age_text)
             else:
@@ -1269,10 +1304,15 @@ class StratColumn(QWidget):
     def draw_depositional_environment_column(self, painter, layer, x, y, width, height):
         layer_dep_env_name = layer.dep_env.display_name
         layer_dep_env_color = layer.dep_env.color
+
+        # Calculate contrasting text color
+        
         painter.setBrush(QBrush(QColor(layer_dep_env_color)))
         painter.setPen(QPen(Qt.black, 1))
         painter.drawRect(x, y, width, height)
 
+        text_color = get_contrasting_color_from_hex(layer_dep_env_color) 
+        painter.setPen(QPen(text_color, 1))  
         text_rect = QRect(x + 5, y + 5, width - 10, height - 10)
         painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
                             f"{layer_dep_env_name.upper()}")
