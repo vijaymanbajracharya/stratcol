@@ -17,6 +17,7 @@ if __name__ == "__main__":
     window.age_display_options_changed.connect(window.strat_column.update_age_display_options)
     window.show_formation_gap_changed.connect(window.strat_column.update_formation_gap)
     window.display_age_range_changed.connect(window.strat_column.update_display_age_range)
+    window.intrusion_age_range_changed.connect(window.strat_column.update_intrusion_age_range)
 
     # Display
     window.show()

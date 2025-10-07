@@ -250,6 +250,7 @@ class StratColumnMaker(QMainWindow):
     age_display_options_changed = Signal(dict)
     show_formation_gap_changed = Signal(bool)
     display_age_range_changed = Signal(float, float)
+    intrusion_age_range_changed = Signal(float, float)
 
     def __init__(self):
         super().__init__()
@@ -741,6 +742,7 @@ class StratColumnMaker(QMainWindow):
         form_layout = QHBoxLayout()
         thickness_range_layout = QHBoxLayout()
         render_range_layout = QHBoxLayout()
+        intrusion_range_layout = QHBoxLayout()
         
         # Layer input section
         layout.addWidget(QLabel("<b>Add New Layer:</b>"))
@@ -886,6 +888,34 @@ class StratColumnMaker(QMainWindow):
 
         layout.addLayout(render_range_layout)
 
+        # Igneous Intrusion based on age range
+        intrusion_range_layout.addWidget(QLabel("Igneous Intrusion from age (Ma):"))
+
+        self.intrusion_from_age_input = QDoubleSpinBox()
+        self.intrusion_from_age_input.setDecimals(1)
+        self.intrusion_from_age_input.setRange(0.0, DEFAULT_OLD_AGE)
+        self.intrusion_from_age_input.setSingleStep(0.1)
+        self.intrusion_from_age_input.setValue(DEFAULT_YOUNG_AGE)
+
+        intrusion_range_layout.addWidget(self.intrusion_from_age_input)
+
+        intrusion_range_layout.addWidget(QLabel("Igneous Intrusion to age (Ma):"))
+        self.intrusion_to_age_input = QDoubleSpinBox()
+        self.intrusion_to_age_input.setDecimals(1)
+        self.intrusion_to_age_input.setRange(0.0, DEFAULT_OLD_AGE)
+        self.intrusion_to_age_input.setSingleStep(0.1)
+        self.intrusion_to_age_input.setValue(DEFAULT_YOUNG_AGE)
+        
+        intrusion_range_layout.addWidget(self.intrusion_to_age_input)
+
+        self.intrusion_from_age_input.editingFinished.connect(self.on_intrusion_age_range_changed)
+        self.intrusion_to_age_input.editingFinished.connect(self.on_intrusion_age_range_changed)
+
+        self.intrusion_from_age_input.valueChanged.connect(self.on_value_changed_from_arrows_intrusion_age_range)
+        self.intrusion_to_age_input.valueChanged.connect(self.on_value_changed_from_arrows_intrusion_age_range)
+
+        layout.addLayout(intrusion_range_layout)
+
         # Eras, Periods, Epochs, Ages
         checkbox_layout = QHBoxLayout()
         
@@ -1004,6 +1034,18 @@ class StratColumnMaker(QMainWindow):
         sender = self.sender()
         if not sender.lineEdit().hasFocus():
             self.on_display_age_range_changed()
+    
+    def on_intrusion_age_range_changed(self):
+        """Emit the display age range changed signal with current values"""
+        from_age = self.intrusion_from_age_input.value()
+        to_age = self.intrusion_to_age_input.value()
+        self.intrusion_age_range_changed.emit(from_age, to_age)
+    
+    def on_value_changed_from_arrows_intrusion_age_range(self):
+        # Only emit if the spinbox doesn't have focus
+        sender = self.sender()
+        if not sender.lineEdit().hasFocus():
+            self.on_intrusion_age_range_changed()
 
     def on_scaling_mode_changed(self, value):
         """Handle scaling mode change"""       

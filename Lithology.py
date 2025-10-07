@@ -46,6 +46,7 @@ class RockType(Enum):
     SCHIST = "schist"
 
     # Other/Unknown
+    IGNEOUS_INTRUSION = "igneous_intrusion"
     UNKNOWN = "unknown"
 
 class RockCategory(Enum):
@@ -98,6 +99,7 @@ class RockProperties:
         RockType.QUARTZITE: RockCategory.METAMORPHIC,
         RockType.SCHIST: RockCategory.METAMORPHIC,
         RockType.UNKNOWN: RockCategory.OTHER,
+        RockType.IGNEOUS_INTRUSION: RockCategory.OTHER,
     }
 
     PATTERNS = {
@@ -136,6 +138,7 @@ class RockProperties:
         RockType.GNEISS: "708",
         RockType.QUARTZITE: "702",
         RockType.SCHIST: "705",
+        RockType.IGNEOUS_INTRUSION: "731",
     }
 
     @classmethod

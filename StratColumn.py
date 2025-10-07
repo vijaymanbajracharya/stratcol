@@ -61,6 +61,7 @@ class StratColumn(QWidget):
         self.scaling_mode = ScalingMode.CHRONOLOGY
         self.show_formation_gap = True
         self.display_age_range = (DEFAULT_YOUNG_AGE, DEFAULT_OLD_AGE)
+        self.intrusion_age_range = (DEFAULT_YOUNG_AGE, DEFAULT_YOUNG_AGE)
     
     def update_scaling_mode(self, scaling_mode):
         '''Change scaling mode'''
@@ -78,6 +79,10 @@ class StratColumn(QWidget):
 
     def update_display_age_range(self, from_age, to_age):
         self.display_age_range = (from_age, to_age)
+        self.update()
+    
+    def update_intrusion_age_range(self, from_age, to_age):
+        self.intrusion_age_range = (from_age, to_age)
         self.update()
 
     def check_layer_overlap(self, new_layer):
@@ -1122,6 +1127,8 @@ class StratColumn(QWidget):
                 painter.drawLine(depoitional_col_x, layer_top_y, depoitional_col_x + depositional_col_width, layer_top_y)
                 painter.drawLine(depoitional_col_x, layer_top_y + layer_height, depoitional_col_x + depositional_col_width, layer_top_y + layer_height)
 
+        self.overlay_igneous_intrusion_column(painter)
+
     def draw_wavy_boundary(self, painter, y_position, column_positions, age_gap):
         """
         Draw a wavy line across all columns to indicate an unconformity (age gap).
@@ -1316,3 +1323,153 @@ class StratColumn(QWidget):
         text_rect = QRect(x + 5, y + 5, width - 10, height - 10)
         painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
                             f"{layer_dep_env_name.upper()}")
+    
+    def overlay_igneous_intrusion_column(self, painter):
+        """
+        Overlay an igneous intrusion column over the pattern column.
+        Only implemented for CHRONOLOGY scaling mode (paint_scaling_mode_1).
+        The column is half the width of the pattern column and positioned based on intrusion_age_range.
+        """
+        # Get intrusion age range
+        intrusion_young_age, intrusion_old_age = self.intrusion_age_range
+        
+        # Skip if intrusion ages are the same (no intrusion to display)
+        if intrusion_young_age >= intrusion_old_age:
+            return
+        
+        # Filter for visible layers within display age range
+        from_age, to_age = self.display_age_range
+        visible_layers = [
+            layer for layer in self.layers 
+            if layer.visible and self.layer_intersects_age_range_full(layer, from_age, to_age)
+        ]
+        
+        if not visible_layers:
+            return
+        
+        # Sort layers by age (youngest first)
+        sorted_layers = sorted(visible_layers, key=lambda l: l.young_age)
+        
+        # Calculate total age span and scaling
+        total_age_span = sum(layer.old_age - layer.young_age for layer in sorted_layers)
+        if total_age_span <= 0:
+            total_age_span = 1
+        
+        start_y = 50
+        available_height = self.height() - 150
+        scale = available_height / total_age_span
+        
+        # Calculate pattern column x position (same logic as in paint_scaling_mode_1)
+        current_x = 0
+        if self.display_options['show_eras']:
+            current_x += DEFAULT_COLUMN_SIZE
+        if self.display_options['show_periods']:
+            current_x += DEFAULT_COLUMN_SIZE
+        if self.display_options['show_epochs']:
+            current_x += DEFAULT_COLUMN_SIZE
+        if self.display_options['show_ages']:
+            current_x += DEFAULT_COLUMN_SIZE
+        
+        # Pattern column position
+        col_x = current_x
+        col_width = DEFAULT_COLUMN_SIZE
+        pattern_col_x = col_x + col_width
+        pattern_col_width = DEFAULT_COLUMN_SIZE
+        
+        # Intrusion column is half the width of pattern column
+        intrusion_col_width = pattern_col_width / 2
+
+        intrusion_col_x = pattern_col_x
+        
+        # Find the y-position for the intrusion based on the age range
+        # We need to find where intrusion_young_age and intrusion_old_age fall in the column
+        
+        # Calculate cumulative positions for each layer
+        current_y = start_y
+        intrusion_top_y = None
+        intrusion_bottom_y = None
+        
+        for layer in sorted_layers:
+            layer_age_span = layer.old_age - layer.young_age
+            layer_height = layer_age_span * scale
+            
+            if layer_height < 5:
+                layer_height = 5
+            
+            layer_top_y = current_y
+            layer_bottom_y = current_y + layer_height
+            
+            # Check if intrusion young age falls within this layer
+            if intrusion_top_y is None and layer.young_age <= intrusion_young_age <= layer.old_age:
+                # Calculate proportional position within this layer
+                proportion = (intrusion_young_age - layer.young_age) / layer_age_span
+                intrusion_top_y = layer_top_y + (proportion * layer_height)
+            
+            # Check if intrusion old age falls within this layer
+            if intrusion_bottom_y is None and layer.young_age <= intrusion_old_age <= layer.old_age:
+                # Calculate proportional position within this layer
+                proportion = (intrusion_old_age - layer.young_age) / layer_age_span
+                intrusion_bottom_y = layer_top_y + (proportion * layer_height)
+            
+            current_y += layer_height
+            
+            # If we've found both boundaries, we can stop
+            if intrusion_top_y is not None and intrusion_bottom_y is not None:
+                break
+        
+        # If intrusion extends beyond visible layers, clamp to visible range
+        if intrusion_top_y is None:
+            intrusion_top_y = start_y
+        if intrusion_bottom_y is None:
+            intrusion_bottom_y = start_y + available_height
+        
+        # Calculate intrusion height
+        intrusion_height = intrusion_bottom_y - intrusion_top_y
+        
+        # Ensure minimum height for visibility
+        if intrusion_height < 5:
+            intrusion_height = 5
+        
+        # Draw the intrusion column
+        painter.save()
+        
+        # Draw background for intrusion
+        intrusion_color = QColor(255, 255, 255)  
+        painter.setBrush(QBrush(intrusion_color))
+        painter.setPen(QPen(Qt.black, 2))  
+        painter.drawRect(QRectF(intrusion_col_x, intrusion_top_y, intrusion_col_width, intrusion_height))
+
+        painter.setPen(QPen(Qt.black, 1))
+
+        # Get the specific texture brush
+        texture_brush = self.get_texture_brush(RockProperties.get_pattern(RockType.IGNEOUS_INTRUSION))
+        
+        if texture_brush:
+            painter.setBrush(texture_brush)
+        else:
+            painter.setBrush(QBrush(Qt.NoBrush))
+        
+        painter.drawRect(QRectF(intrusion_col_x, intrusion_top_y, intrusion_col_width, intrusion_height))
+        
+        # Draw label if there's enough space
+        if intrusion_height > 30:
+            painter.setPen(QPen(Qt.black, 1))
+            font = QFont()
+            font.setPointSize(12)
+            font.setBold(True)
+            painter.setFont(font)
+            
+            text_rect = QRectF(intrusion_col_x + 5, intrusion_top_y + 5, 
+                            intrusion_col_width - 10, intrusion_height - 10)
+            
+            # Draw rotated text for igneous intrusion
+            painter.save()
+            painter.translate(intrusion_col_x + intrusion_col_width / 2, 
+                            intrusion_top_y + intrusion_height / 2)
+            painter.rotate(90)
+            painter.drawText(QRectF(-intrusion_height / 2, -intrusion_col_width / 4,
+                                    intrusion_height, intrusion_col_width / 2),
+                            Qt.AlignCenter, "Igneous Intrusion")
+            painter.restore()
+        
+        painter.restore()
