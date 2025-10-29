@@ -394,6 +394,8 @@ class StratColumnMaker(QMainWindow):
             # Extract layers and metadata separately
             layers_data = data.get("layers", [])
             metadata = data.get("metadata", {})
+            intrusion_from = data.get("intrusion_from_age", DEFAULT_YOUNG_AGE)
+            intrusion_to = data.get("intrusion_to_age", DEFAULT_YOUNG_AGE)
 
             # Clear all current layers before adding new ones
             for _ in range(len(self.strat_column.layers)):
@@ -413,6 +415,16 @@ class StratColumnMaker(QMainWindow):
 
             # Reset input fields to defaults
             self.reset_input_fields()
+
+            # Restore intrusion age range from metadata (with defaults if not present)
+            intrusion_from_age = intrusion_from
+            intrusion_to_age = intrusion_to
+
+            self.intrusion_from_age_input.setValue(intrusion_from_age)
+            self.intrusion_to_age_input.setValue(intrusion_to_age)
+
+            # Emit the signal to update the visual display
+            self.intrusion_age_range_changed.emit(intrusion_from_age, intrusion_to_age)
             
             # Show success message
             QMessageBox.information(
@@ -454,10 +466,12 @@ class StratColumnMaker(QMainWindow):
             # Collect all layer data
             column_data = {
                 "layers": [],
+                "intrusion_from_age": self.intrusion_from_age_input.value(),
+                "intrusion_to_age": self.intrusion_to_age_input.value(),
                 "metadata": {
                     "version": "1.0",
                     "created_with": "Stratigraphic Column Maker",
-                    "total_layers": len(self.strat_column.layers)
+                    "total_layers": len(self.strat_column.layers),
                 }
             }
             
@@ -507,10 +521,12 @@ class StratColumnMaker(QMainWindow):
             # Collect all layer data
             column_data = {
                 "layers": [],
+                "intrusion_from_age": self.intrusion_from_age_input.value(),
+                "intrusion_to_age": self.intrusion_to_age_input.value(),
                 "metadata": {
                     "version": "1.0",
                     "created_with": "Stratigraphic Column Maker",
-                    "total_layers": len(self.strat_column.layers)
+                    "total_layers": len(self.strat_column.layers),
                 }
             }
             

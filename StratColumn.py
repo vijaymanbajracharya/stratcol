@@ -427,6 +427,8 @@ class StratColumn(QWidget):
             if depoitional_col_x is not None:
                 self.draw_depositional_environment_column(painter, layer, depoitional_col_x, layer_top_y, depositional_col_width, layer_height)
         
+        self.overlay_igneous_intrusion_column(painter)
+
         if self.scaling_mode == ScalingMode.FORMATION_TOP_THICKNESS:
             # Draw depth scale (position it after the pattern column)
             painter.setPen(QPen(Qt.black, 1))
@@ -683,6 +685,8 @@ class StratColumn(QWidget):
             
             # Move to next layer position
             current_y += layer_height
+        
+        self.overlay_igneous_intrusion_column(painter)
 
     def paint_scaling_mode_1(self, painter):
         # Filter for only visible layers AND layers within the display age range
